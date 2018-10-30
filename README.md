@@ -36,10 +36,34 @@ As you work through the project, focus on and complete each set of requirements 
 In this assignment, we'll set up the project and add a placeholder route to make sure everything is ready for the rest of the project.
 
 **Requirements**
+
 When a user visits the path "/", the application should display the text "Getting started."
 
 **Implementation**
+
 * Setup basic structure for a Sinatra web application:
   * `Gemfile` with dependencies
   * App file with a root route (`get "/"`)
 * `bundle install`
+
+---
+
+### Adding an Index Page - 10/29/2018
+
+Many content management systems store their content in databases, but some use files stored on the filesystem instead. This is the path we will follow with this project. Each document within the CMS will have a name that includes an extension. This extension will determine how the contents of the page are displayed in later steps.
+
+**Requirements**
+
+When a user visits the home page, they should see a list of the documents in the CMS: `history.txt`, `changes.txt` and `about.txt`.
+
+**Implementation**
+
+* setup the directory structure with the specified files in a `public` directory
+* create a `views` directory and add an `index.erb` view that lists the files
+* redirect the root route to the `index.erb` view
+
+**Corrections Based on Provided Implementation/Solution**
+
+* no need to redirect `/` to `/index`, just display `index` view from `/`
+* use a `data` directory, not `public`
+* observe more consistent naming conventions ("files" rather than "documents")
