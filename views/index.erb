@@ -1,7 +1,29 @@
 <!-- index.erb -->
+<!doctype html>
+<html lang="en-US">
+<head>
+  <title>CMS</title>
+  <meta charset="UTF-8">
+</head>
 
-<ul>
-  <% @files.sort.each do |file| %>
-    <li><%= file %></li>
+<body>
+  <% if session['error'] %>
+    <div class="flash error">
+      <p>ERROR: <%= session.delete('error') %></p>
+    </div>
   <% end %>
-</ul>
+
+  <% if session['success'] %>
+    <div class="flash success">
+      <p>SUCCESS: <%= session.delete('success') %></p>
+    </div>
+  <% end %>
+
+  <ul>
+    <% @files.sort.each do |file| %>
+      <li><a href="/<%= file %>"><%= file %></a></li>
+    <% end %>
+  </ul>
+
+</body>
+</html>

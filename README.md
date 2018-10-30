@@ -67,3 +67,30 @@ When a user visits the home page, they should see a list of the documents in the
 * no need to redirect `/` to `/index`, just display `index` view from `/`
 * use a `data` directory, not `public`
 * observe more consistent naming conventions ("files" rather than "documents")
+
+---
+
+### Viewing Text Files - 10/29/2018
+
+This is a good time to add some content to the files in the `data` directory of the project. Feel free to use any text you'd like.
+
+**Requirements**
+
+1. When a user visits the index page, they are presented with a list of links, one for each document in the CMS.
+2. When a user clicks on a document link in the index, they should be taken to a page that displays the content of the file whose name was clicked.
+3. When a user visits the path `/history.txt`, they will be presented with the content of the document `history.txt`.
+4. The browser should render a text file as a plain text file.
+
+**Implementation**
+
+* Populate `data` files with content.
+* create a route for viewing a specific file by name
+* have the list of files on `index` link to each file via this route
+* create a view to display the contents of a specific file by name
+* use `Content-Type` header to display a file's contents appropriately
+
+**Corrections Based on Provided Implementation/Solution**
+* no need for a `file` view template, just render file contents directly
+
+---
+
