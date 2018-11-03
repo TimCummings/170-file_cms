@@ -5,3 +5,9 @@ ruby '2.5.1'
 gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'erubis'
+
+group :development do
+  gem 'minitest'
+  gem 'minitest-reporters'
+  gem 'rack-test'
+end

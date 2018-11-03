@@ -6,7 +6,7 @@ require 'sinatra/reloader' if development?
 require 'tilt/erubis'
 
 EXT_TYPE = {
-  '.txt' => 'text'
+  '.txt' => 'text/plain'
 }
 
 def data_path
@@ -26,6 +26,6 @@ get '/:file_name' do
     headers['Content-Type'] = EXT_TYPE[File.extname(@file_name)]
     File.read(file_path)
   else
-    session['error'] = "Could not find file `#{@file_name}`."
+    halt 404, "Could not find file `#{@file_name}`."
   end
 end

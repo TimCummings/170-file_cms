@@ -94,3 +94,21 @@ This is a good time to add some content to the files in the `data` directory of 
 
 ---
 
+### Adding Tests - 10/30/2018
+
+**Requirements**
+
+* Write tests for the routes that the application already supports.
+
+**Implementation**
+
+* update `Gemfile` with testing dependencies
+* `bundle install`
+* create a `test` directory with a file to test the app
+  * set testing env variable
+  * require files for testing
+  * create test class including `app` method
+* for each route in the app:
+  * make a request
+  * access the response
+  * assert against response values
