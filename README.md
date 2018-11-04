@@ -142,3 +142,36 @@ Try to write a test for this assignment by describing exactly what the user does
   * verify the flash message of the second response
 
 ---
+
+### Viewing Markdown Files - 11/3/2018
+
+Markdown is a common text-to-html markup language. You've probably encountered it here on Launch School, on Stack Overflow, GitHub, and other popular sites already.
+
+Converting raw Markdown text into HTML can be done with a variety of libraries, many of which are available for use with a Ruby application. We recommend you use [Redcarpet](https://github.com/vmg/redcarpet) in this project. To get started, follow these steps:
+
+1. Add `redcarpet` to your `Gemfile` and run `bundle install`.
+2. Add `require "redcarpet"` to the top of your application.
+3. To actually render text into HTML, create a `Redcarpet::Markdown` instance and then use it to process the text:
+
+```ruby
+markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+markdown.render("# This will be a headline!")
+```
+
+You can read more about how to use Redcarpet [on GitHub](https://github.com/vmg/redcarpet).
+
+**Requirements**
+
+* When a user views a document written in Markdown format, the browser should render the rendered HTML version of the document's content.
+
+**Implementation**
+
+* install and require `redcarpet` as specified
+* create a markdown file in the `data` directory
+* add logic to the `/:file_name` route to detect markdown files and render them via `redcarpet`
+* add a test for a markdown file
+
+**Corrections based on provided Implementation/Solution**
+
+* extract markdown rendering to a method
+* extract file handling (determining content type and loading contents) to a method
