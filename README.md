@@ -112,3 +112,33 @@ This is a good time to add some content to the files in the `data` directory of 
   * make a request
   * access the response
   * assert against response values
+
+---
+
+### Handling Requests for Nonexistent Documents - 11/3/2018
+
+We aren't focusing too much on testing techniques or philosophy in this course, but it is still a good idea to start thinking about what kind of tests you'd need to write to verify the behavior of an application as it changes.
+
+Try to write a test for this assignment by describing exactly what the user does (shown below under **Requirements**). The solution for the test is shown separately below if you'd like to see it without seeing the rest of the implementation.
+
+> You can make more than one request in a `Rack::Test` test.
+
+**Requirements**
+
+* When a user attempts to view a document that does not exist, they should be redirected to the index page and shown the message: `$DOCUMENT does not exist.`
+* When the user reloads the index page after seeing an error message, the message should go away.
+
+**Implementation**
+
+* enable session
+* modify the `/:file_name` route to:
+  * set an error flash message via the session if the requested file is not found
+  * redirect to the index page
+* modify the `index` view to display flash messages
+  * process a flash message message by deleting it from the session so it goes away on page reload
+* modify `bad_file_name_test` to:
+  * verify the redirect from the first response
+  * follow the redirect
+  * verify the flash message of the second response
+
+---

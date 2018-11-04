@@ -5,6 +5,11 @@ require 'sinatra/content_for'
 require 'sinatra/reloader' if development?
 require 'tilt/erubis'
 
+configure do
+  enable :sessions
+  set :session_secret, 'secret'
+end
+
 EXT_TYPE = {
   '.txt' => 'text/plain'
 }
@@ -26,6 +31,7 @@ get '/:file_name' do
     headers['Content-Type'] = EXT_TYPE[File.extname(@file_name)]
     File.read(file_path)
   else
-    halt 404, "Could not find file `#{@file_name}`."
+    session['error'] = "#{@file_name} does not exist."
+    redirect '/'
   end
 end

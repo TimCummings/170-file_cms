@@ -38,8 +38,15 @@ class CMSTest < Minitest::Test
   def test_bad_file_name
     get '/not_a_file.txt'
 
-    assert_equal 404, last_response.status
+    assert_equal 302, last_response.status
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'Could not find file `not_a_file.txt`.'
+    assert_includes last_response.body, 'not_a_file.txt does not exist.'
+
+    get '/'
+    refute_includes last_response.body, 'not_a_file.txt does not exist.'
   end
 end
