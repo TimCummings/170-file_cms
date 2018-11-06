@@ -175,3 +175,30 @@ You can read more about how to use Redcarpet [on GitHub](https://github.com/vmg/
 
 * extract markdown rendering to a method
 * extract file handling (determining content type and loading contents) to a method
+
+---
+
+### Editing Document Content - 11/4/2018
+
+Now it’s time to allow users to modify the content stored within our CMS.
+
+**Requirements**
+
+1. When a user views the index page, they should see an “Edit” link next to each document name.
+2. When a user clicks an edit link, they should be taken to an edit page for the appropriate document.
+3. When a user views the edit page for a document, that document's content should appear within a textarea.
+4. When a user edits the document's content and clicks a “Save Changes” button, they are redirected to the index page and are shown a message: `$FILENAME has been updated.`.
+
+**Implementation**
+
+* modify `index` view to show an "Edit" link next to each file
+* add a route for editing a file:
+  * `get '/:file_name/edit'`
+  * `post '/:file_name'`
+* add a view for editing a file
+  * file contents should appear in a `textarea`
+* add a `post` route for saving changes; it should set a flash message and redirect to `index`
+
+**Corrections based on provided Implementation/Solution**
+* in `edit` form test, also check for presence of submit button
+* in `post` `edit` route, shorten file write using `File` class method instead of instance method

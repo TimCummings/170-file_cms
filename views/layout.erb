@@ -1,0 +1,19 @@
+<!-- layout.erb -->
+<!doctype html>
+<html lang="en-US">
+<head>
+  <title>CMS</title>
+  <meta charset="UTF-8">
+</head>
+
+<body>
+  <% if session['message'] %>
+    <div class="flash">
+      <p><%= session.delete('message') %></p>
+    </div>
+  <% end %>
+
+  <%= yield %>
+
+</body>
+</html>

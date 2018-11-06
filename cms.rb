@@ -39,11 +39,13 @@ def render_markdown(text)
   markdown.render(text)
 end
 
+# index: view a list of files
 get '/' do
   @files = Dir.glob(data_path + '*').map { |path| File.basename(path) }
   erb :index
 end
 
+# view a file by name
 get '/:file_name' do
   @file_name = params['file_name']
   file_path = data_path + @file_name
@@ -51,7 +53,38 @@ get '/:file_name' do
   if File.file?(file_path)
     load_content(file_path)
   else
-    session['error'] = "#{@file_name} does not exist."
+    session['message'] = "#{@file_name} does not exist."
     redirect '/'
   end
+end
+
+# render edit file form
+get '/:file_name/edit' do
+  @file_name = params['file_name']
+  file_path = data_path + @file_name
+
+  if File.file?(file_path)
+    @content = File.read(file_path)
+    erb :edit
+  else
+    session['message'] = "#{@file_name} does not exist."
+    redirect '/'
+  end
+end
+
+# edit a file by name
+post '/:file_name' do
+  @file_name = params['file_name']
+  file_path = data_path + @file_name
+  @content = params['content']
+
+  if File.file?(file_path)
+    File.write(file_path, @content)
+
+    session['message'] = "#{@file_name} has been updated."
+  else
+    session['message'] = "#{@file_name} does not exist."
+  end
+
+  redirect '/'
 end

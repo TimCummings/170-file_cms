@@ -58,4 +58,29 @@ class CMSTest < Minitest::Test
     assert_equal 'text/html', last_response['Content-Type']
     assert_includes last_response.body, '<h1>Ruby is...</h1>'
   end
+
+  def test_edit_form
+    get 'about.md/edit'
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, "easy to write.\n</textarea>"
+    assert_includes last_response.body, '<button type="submit">Save Changes</button>'
+  end
+
+  def test_editing_a_file
+    FileUtils.cp data_path + 'about.md', data_path + 'temp.md'
+
+    post '/about.md', 'content' => 'Hello World!'
+
+    assert_equal 302, last_response.status
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'about.md has been updated.'
+
+    FileUtils.rm data_path + 'about.md'
+    FileUtils.mv data_path + 'temp.md', data_path + 'about.md', :force => true
+  end
 end
