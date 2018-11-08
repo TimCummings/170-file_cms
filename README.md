@@ -202,3 +202,36 @@ Now it’s time to allow users to modify the content stored within our CMS.
 **Corrections based on provided Implementation/Solution**
 * in `edit` form test, also check for presence of submit button
 * in `post` `edit` route, shorten file write using `File` class method instead of instance method
+
+---
+
+### Isolating Test Execution - 11/7/2018
+
+Right now the application is using the same data during both development and testing. This means that as we modify the data as we continue development, there is a chance we break some of the tests we've already written. To see this for yourself, edit the file `about.md` and change the first line. One of the tests will start to fail.
+
+The technique used to avoid this involves using a different set of data for each _environment_ the application will run in. We currently have two active environments: development and test. If we were using a database, we could use different databases. Since our data is stored entirely on the filesystem, though, we can simply use two different directories to hold the data for our two environments.
+
+Furthermore, if we think back to the [SEAT Approach](https://launchschool.com/lessons/dd2ae827/assignments/3814), what we _really_ should be doing is setting up the data for each test in the **set up** step, and then deleting it in the **tear down** step. Here is a review of the SEAT approach:
+
+1. Set up the necessary objects.
+2. Execute the code against the object we're testing.
+3. Assert the results of the execution.
+4. Tear down and clean up any lingering artifacts.
+
+So far, our tests have only been doing #2 and #3, which is fine in cases where there isn't any set up or tear down needed. In the case of this application, though, it would be advantageous to start using those steps to prepare for and clean up after our tests run.
+
+The first thing we need to be able to do is select a directory for data based on the environment the code is running in. If we look through our code, we'll see that we're referencing the `root` local variable in nearly all of the routes, and when we use it, we're always appending `/data` to it. So let's rework the code to have a method called `data_path` that returns the correct path to where the documents will be stored based on the current environment.
+
+Then, we can replace the usage of the `root` variable with references to `data_path`. While we're doing that, we can use `File.join` to combine path segments instead of doing it ourselves manually. The main benefit afforded by `File.join` is it will use the correct path separator based on the current operating system, which will be `/` on OS X and Linux and `\` on Windows.
+
+Now that we've done that, a bunch of the project's tests will be failing since there is now no data in the system when they run. We can use the `setup` method in our test to create the `data` directory if it doesn't exist and the `teardown` method to delete it. These methods are called by Minitest before and after **every** test. This means each test will now be run in an isolated environment.
+
+Note that within `test/cms_test.rb` we are able to access the `data_path` method defined in `cms.rb` because it is defined in a global scope.
+
+> The [FileUtils](http://ruby-doc.org/stdlib-2.3.0/libdoc/fileutils/rdoc/FileUtils.html) module contains a variety of useful methods for working with files and paths. The names and functionality of the methods provided by this module are based on the names and options of common shell commands.
+
+We'll need one more piece to finish this refactoring, and that is to provide a simple way to create documents during testing. This method creates empty files by default, but an optional second parameter allows the contents of the file to be passed in.
+
+---
+
+
