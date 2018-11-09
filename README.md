@@ -222,7 +222,7 @@ So far, our tests have only been doing #2 and #3, which is fine in cases where t
 
 The first thing we need to be able to do is select a directory for data based on the environment the code is running in. If we look through our code, we'll see that we're referencing the `root` local variable in nearly all of the routes, and when we use it, we're always appending `/data` to it. So let's rework the code to have a method called `data_path` that returns the correct path to where the documents will be stored based on the current environment.
 
-Then, we can replace the usage of the `root` variable with references to `data_path`. While we're doing that, we can use `File.join` to combine path segments instead of doing it ourselves manually. The main benefit afforded by `File.join` is it will use the correct path separator based on the current operating system, which will be `/` on OS X and Linux and `\` on Windows.
+Then, we can replace the usage of the `root` variable with references to `data_path`. While we're doing that, we can use `File.join` to combine path segments instead of doing it ourselves manually. The main benefit afforded by `File.join` is it will use the correct path separator based on the current operating system, which will be `/` on OS X and Linux and `\`` on Windows.
 
 Now that we've done that, a bunch of the project's tests will be failing since there is now no data in the system when they run. We can use the `setup` method in our test to create the `data` directory if it doesn't exist and the `teardown` method to delete it. These methods are called by Minitest before and after **every** test. This means each test will now be run in an isolated environment.
 
@@ -234,4 +234,30 @@ We'll need one more piece to finish this refactoring, and that is to provide a s
 
 ---
 
+### Adding Global Style and Behavior - 11/8/2018
 
+When a message is displayed to a user anywhere on the site, it should be styled in a way that is easily distinguished from the rest of the page. This will help attract the user's attention to the information in the message that would otherwise be easy to miss.
+
+While we're adding styling, we can also change the default display of the site to use a sans-serif font and have a little padding around the outside.
+
+**Requirements**
+
+1. When a message is displayed to a user, that message should appear against a yellow background.
+2. Messages should disappear if the page they appear on is reloaded.
+3. Text files should continue to be displayed by the browser as plain text.
+4. The entire site (including markdown files, but not text files) should be displayed in a sans-serif typeface.
+
+**Implementation**
+
+* create a stylesheet to apply styles to the application; link the stylesheet in `layout.erb`
+  * create a `flash` class with a yellow background color and apply it to the flash message in `layout.erb`
+  * use a `body` selector to:
+    * apply `sans-serif` `font-family`
+    * add padding
+* disappearing flash messages on reload has already been implemented
+* displaying text files as plain text has already been implemented
+
+**Corrections based on provided Implementation/Solution**
+
+* flash message background color is slightly different from picked value
+* add `type="text/css"` to stylesheet links

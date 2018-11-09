@@ -45,7 +45,9 @@ class CMSTest < Minitest::Test
   def test_file_name_txt
     content = <<~ABOUT
       About Ruby
-      Wondering why Ruby is so popular? Its fans call it a beautiful, artful language. And yet, they say it's handy and practical. What gives?
+      Wondering why Ruby is so popular?
+      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
+      What gives?
     ABOUT
 
     create_document 'about.txt', content
@@ -88,7 +90,9 @@ class CMSTest < Minitest::Test
   def test_edit_form
     content = <<~ABOUT
       # About Ruby
-      Wondering why Ruby is so popular? Its fans call it a beautiful, artful language. And yet, they say it's handy and practical. What gives?
+      Wondering why Ruby is so popular?
+      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
+      What gives?
     ABOUT
     create_document('about.md', content)
 
@@ -103,7 +107,9 @@ class CMSTest < Minitest::Test
   def test_editing_a_file
     content = <<~ABOUT
       # About Ruby
-      Wondering why Ruby is so popular? Its fans call it a beautiful, artful language. And yet, they say it's handy and practical. What gives?
+      Wondering why Ruby is so popular?
+      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
+      What gives?
     ABOUT
     create_document('about.md', content)
 
