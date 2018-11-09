@@ -261,3 +261,11 @@ While we're adding styling, we can also change the default display of the site t
 
 * flash message background color is slightly different from picked value
 * add `type="text/css"` to stylesheet links
+
+---
+
+### Sidebar: Favicon Requests
+
+While working on this assignment you might start to notice messages such as: `favicon.ico does not exist.`
+
+Save [this image](https://da77jsbdz4r05.cloudfront.net/images/file_based_cms/favicon.ico) to the project's `public` directory, and these errors will go away. Browsers automatically request a file called `favicon.ico` when they load sites so they can show an icon for that site. By adding this file, the browser will show it in the page's tab and your application won't have to deal with ignoring those requests, as they can sometimes cause unexpected errors.
