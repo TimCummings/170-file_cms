@@ -128,4 +128,32 @@ class CMSTest < Minitest::Test
     assert_equal 'text/html', last_response['Content-Type']
     assert_includes last_response.body, 'Hello World!'
   end
+
+  def test_new_file_form
+    get '/new'
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'Add a new document:'
+    assert_includes last_response.body, '<input type="text" name="file_name"'
+    assert_includes last_response.body, '<button type="submit">Create</button>'
+  end
+
+  def test_creating_a_file
+    post '/create', 'file_name' => 'new_file.txt'
+
+    assert_equal 302, last_response.status
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'new_file.txt was created.'
+  end
+
+  def test_creating_a_file_without_a_name
+    post '/create', 'file_name' => ''
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'A name is required.'
+  end
 end

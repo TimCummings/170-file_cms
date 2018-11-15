@@ -264,8 +264,41 @@ While we're adding styling, we can also change the default display of the site t
 
 ---
 
-### Sidebar: Favicon Requests
+### Sidebar: Favicon Requests - 11/8/2018
 
 While working on this assignment you might start to notice messages such as: `favicon.ico does not exist.`
 
 Save [this image](https://da77jsbdz4r05.cloudfront.net/images/file_based_cms/favicon.ico) to the project's `public` directory, and these errors will go away. Browsers automatically request a file called `favicon.ico` when they load sites so they can show an icon for that site. By adding this file, the browser will show it in the page's tab and your application won't have to deal with ignoring those requests, as they can sometimes cause unexpected errors.
+
+---
+
+### Creating New Documents - 11/14/2018
+
+**Requirements**
+
+1. When a user views the index page, they should see a link that says "New Document".
+2. When a user clicks the "New Document" link, they should be taken to a page with a text input labeled "Add a new document:" and a submit button labeled "Create".
+3. When a user enters a document name and clicks "Create", they should be redirected to the index page. The name they entered in the form should now appear in the file list. They should see a message that says "$FILENAME was created.", where $FILENAME is the name of the document just created.
+4. If a user attempts to create a new document without a name, the form should be re-displayed and a message should say "A name is required."
+
+**Implementation**
+
+* update the `index.erb` view to also display a `"New Document"` link.
+* create a `get '/new'` route to display a new document form.
+* create a `new.erb` view to display the new document form as specified.
+* create a `post '/'` route to create a new document.
+  * If no name is provided, set the specified session message and re-render the new document form.
+  * Otherwise, create the file, set the specified session message, and redirect to the index page.
+
+**Corrections based on provided Implementation/Solution**
+* Set a correct status code when re-rendering the new document form (due to no name provided.)
+  * use 422, not 400
+* for the new document route, don't post directly to index; use something semantic, e.g. `'/create'`
+
+**Questions**
+1. What will happen if a user creates a document without a file extension? How could this be handled?
+
+> I make use of `FileUtils.touch`, so a document without a file extension would create ~~a directory~~ an extensionless file as below.
+
+> Using `File.write` as the provided solution does will create the extensionless file, which our CMS will not know how to render. We could attempt to render it as plain text by default; but the better solution is to validate that a file extension is provided.
+

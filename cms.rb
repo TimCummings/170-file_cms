@@ -50,6 +50,27 @@ get '/' do
   erb :index
 end
 
+# render new file form
+get '/new' do
+  erb :new
+end
+
+# create a new file
+post '/create' do
+  @file_name = params['file_name']
+  file_path = File.join(data_path, @file_name)
+
+  if @file_name.strip.empty?
+    session['message'] = 'A name is required.'
+    status 422
+    erb :new
+  else
+    FileUtils.touch file_path
+    session['message'] = "#{@file_name} was created."
+    redirect '/'
+  end
+end
+
 # view a file by name
 get '/:file_name' do
   @file_name = params['file_name']
