@@ -180,4 +180,69 @@ class CMSTest < Minitest::Test
     refute_includes last_response.body, 'new_file.txt</a>'
     refute_includes last_response.body, 'action="/new_file.txt/delete"'
   end
+
+  def test_sign_in_button_is_present_on_index
+    signin_button = <<~SIGNIN
+      <form action="/users/signin" method="get">
+          <button type="submit">Sign In</button>
+    SIGNIN
+
+    get '/'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, signin_button
+  end
+
+  def test_sign_in_form
+    get '/users/signin'
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, '<form action="/users/signin" method="post">'
+    assert_includes last_response.body, '<input type="text" name="username"'
+    assert_includes last_response.body, '<input type="password" name="password"'
+    assert_includes last_response.body, '<button type="submit">Sign In</button>'
+  end
+
+  def test_valid_sign_in
+    post '/users/signin', 'username' => 'admin', 'password' => 'secret'
+
+    assert_equal 302, last_response.status
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'Welcome!'
+    assert_includes last_response.body, 'Signed in as admin.'
+    assert_includes last_response.body, '<form action="/users/signout" method="post">'
+    assert_includes last_response.body, '<button type="submit">Sign Out</button>'
+  end
+
+  def test_invalid_sign_in
+    post '/users/signin', 'username' => 'not_admin', 'password' => 'not_secret'
+
+    assert_equal 401, last_response.status
+    assert_includes last_response.body, 'Invalid Credentials'
+    assert_includes last_response.body, '<input type="text" name="username" id="username" value="not_admin"'
+  end
+
+  def test_sign_out
+    post '/users/signin', 'username' => 'admin', 'password' => 'secret'
+
+    post '/users/signout'
+
+    assert_equal 302, last_response.status
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'You have been signed out.'
+
+    signin_button = <<~SIGNIN
+      <form action="/users/signin" method="get">
+          <button type="submit">Sign In</button>
+    SIGNIN
+
+    assert_includes last_response.body, signin_button
+  end
 end

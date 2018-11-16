@@ -43,6 +43,10 @@ def render_markdown(text)
   markdown.render(text)
 end
 
+def user?
+  !session['user'].nil? && !session['user'].empty?
+end
+
 # index: view a list of files
 get '/' do
   pattern = File.join(data_path, '*')
@@ -121,5 +125,30 @@ post '/:file_name/delete' do
 
   FileUtils.rm file_path
   session['message'] = "#{@file_name} was deleted."
+  redirect '/'
+end
+
+# render signin form
+get '/users/signin' do
+  erb :signin
+end
+
+# attempt to sign in the user with provided credentials
+post '/users/signin' do
+  if params['username'] == 'admin' && params['password'] == 'secret'
+    session['user'] = params['username']
+    session['message'] = 'Welcome!'
+    redirect '/'
+  else
+    session['message'] = 'Invalid Credentials'
+    status 401
+    erb :signin
+  end
+end
+
+# sign out
+post '/users/signout' do
+  session.delete 'user'
+  session['message'] = 'You have been signed out.'
   redirect '/'
 end

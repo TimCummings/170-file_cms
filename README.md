@@ -319,3 +319,40 @@ Save [this image](https://da77jsbdz4r05.cloudfront.net/images/file_based_cms/fav
   * set a session message as specified
   * delete the file
   * redirect to index
+
+---
+
+### Signing In and Out - 11/15/2018
+
+Now that the content in our CMS can be modified and new documents can be created and deleted, we'd like to only allow registered users to be able to perform these tasks. To do that, though, first we'll need to have a way for users to sign in and out of the application.
+
+**Requirements**
+
+1. When a signed-out user views the index page of the site, they should see a "Sign In" button.
+2. When a user clicks the "Sign In" button, they should be taken to a new page with a sign in form. The form should contain a text input labeled "Username" and a password input labeled "Password". The form should also contain a submit button labeled "Sign In"
+3. When a user enters the username "admin" and password "secret" into the sign in form and clicks the "Sign In" button, they should be signed in and redirected to the index page. A message should display that says "Welcome!"
+4. When a user enters any other username and password into the sign in form and clicks the "Sign In" button, the sign in form should be redisplayed and an error message "Invalid Credentials" should be shown. The username they entered into the form should appear in the username input.
+5. When a signed-in user views the index page, they should see a message at the bottom of the page that says "Signed in as $USERNAME.", followed by a button labeled "Sign Out".
+6. When a signed-in user clicks this "Sign Out" button, they should be signed out of the application and redirected to the index page of the site. They should see a message that says "You have been signed out.".
+
+**Implementation**
+
+* Add a method to verify if the user is signed in or not.
+  * Check for a signed in user by seeing if there is a value in the session for the key `user`.
+* Update the `index.erb` view to:
+  * Display a `Sign In` button if the user is not signed in.
+  * Display the specified "signed in as..." message with a `Sign Out` button if the user is signed in.
+* Create a `signin.erb` view as specified.
+* Create a `get '/users/signin'` route to display the signin view.
+* Create a `post '/users/signin'` route that verifies the provided username and password.
+  * If valid:
+    * Sign the user in by setting `session['user']` to the username (`admin` for now).
+    * Set a `'Welcome!'` flash message.
+    * Redirect to index.
+  * If invalid:
+    * Set an `'Invalid Credentials'` flash message.
+    * Re-render the `Sign In` view (a previously entered username should persist in the re-rendered form.)
+* Create a `post '/users/signout'` route that:
+  * Signs the user out by deleting the `user` key from the session.
+  * Sets the specified flash message.
+  * Redirects to index.

@@ -1,8 +1,4 @@
 <!-- index.erb -->
-<a href="/new">New Document</a>
-
-<br /><br />
-
 <ul>
   <% @files.sort.each do |file| %>
     <li>
@@ -16,3 +12,18 @@
     </li>
   <% end %>
 </ul>
+
+<a href="/new">New Document</a>
+
+<br /><br />
+
+<% if user? %>
+  <form action="/users/signout" method="post">
+    <em>Signed in as <%= session['user'] %>.</em>
+    <button type="submit">Sign Out</button>
+  </form>
+<% else %>
+  <form action="/users/signin" method="get">
+    <button type="submit">Sign In</button>
+  </form>
+<% end %>
