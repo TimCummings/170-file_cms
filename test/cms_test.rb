@@ -156,4 +156,28 @@ class CMSTest < Minitest::Test
     assert_equal 422, last_response.status
     assert_includes last_response.body, 'A name is required.'
   end
+
+  def test_delete_button_is_present_on_index
+    create_document 'new_file.txt'
+    get '/'
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'new_file.txt</a>'
+    assert_includes last_response.body, 'action="/new_file.txt/delete"'
+  end
+
+  def test_delete_a_file
+    create_document 'new_file.txt'
+    post '/new_file.txt/delete'
+
+    assert_equal 302, last_response.status
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'new_file.txt was deleted.'
+    refute_includes last_response.body, 'new_file.txt</a>'
+    refute_includes last_response.body, 'action="/new_file.txt/delete"'
+  end
 end

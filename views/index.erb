@@ -8,6 +8,11 @@
     <li>
       <span><a href="/<%= file %>"><%= file %></a></span>
       <span><a href="<%= file %>/edit">Edit</a></span>
+      <span>
+        <form class="button" action="/<%= file %>/delete" method="post">
+          <button type="submit">delete</button>
+        </form>
+      </span>
     </li>
   <% end %>
 </ul>

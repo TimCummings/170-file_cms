@@ -113,3 +113,13 @@ post '/:file_name' do
 
   redirect '/'
 end
+
+# delete a file
+post '/:file_name/delete' do
+  @file_name = params['file_name']
+  file_path = File.join(data_path, @file_name)
+
+  FileUtils.rm file_path
+  session['message'] = "#{@file_name} was deleted."
+  redirect '/'
+end

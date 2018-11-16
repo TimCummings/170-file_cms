@@ -283,17 +283,17 @@ Save [this image](https://da77jsbdz4r05.cloudfront.net/images/file_based_cms/fav
 
 **Implementation**
 
-* update the `index.erb` view to also display a `"New Document"` link.
-* create a `get '/new'` route to display a new document form.
-* create a `new.erb` view to display the new document form as specified.
-* create a `post '/'` route to create a new document.
+* Update the `index.erb` view to also display a `"New Document"` link.
+* Create a `get '/new'` route to display a new document form.
+* Create a `new.erb` view to display the new document form as specified.
+* Create a `post '/'` route to create a new document.
   * If no name is provided, set the specified session message and re-render the new document form.
   * Otherwise, create the file, set the specified session message, and redirect to the index page.
 
 **Corrections based on provided Implementation/Solution**
 * Set a correct status code when re-rendering the new document form (due to no name provided.)
   * use 422, not 400
-* for the new document route, don't post directly to index; use something semantic, e.g. `'/create'`
+* For the new document route, don't post directly to index; use something semantic, e.g. `'/create'`
 
 **Questions**
 1. What will happen if a user creates a document without a file extension? How could this be handled?
@@ -302,3 +302,20 @@ Save [this image](https://da77jsbdz4r05.cloudfront.net/images/file_based_cms/fav
 
 > Using `File.write` as the provided solution does will create the extensionless file, which our CMS will not know how to render. We could attempt to render it as plain text by default; but the better solution is to validate that a file extension is provided.
 
+---
+
+### Deleting Documents - 11/15/2018
+
+**Requirements**
+
+1. When a user views the index page, they should see a "delete" button next to each document.
+
+2. When a user clicks a "delete" button, the application should delete the appropriate document and display a message: "$FILENAME was deleted".
+
+**Implementation**
+
+* Update `index.erb` to display a `delete` button next to each document.
+* Create a `post '/:file_name/delete'` route.
+  * set a session message as specified
+  * delete the file
+  * redirect to index
