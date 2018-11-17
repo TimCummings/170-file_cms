@@ -18,7 +18,7 @@ class CMSTest < Minitest::Test
   end
 
   def setup
-    FileUtils.mkdir data_path
+    FileUtils.mkdir_p data_path
   end
 
   def teardown
@@ -28,6 +28,10 @@ class CMSTest < Minitest::Test
   def create_document(file_name, contents = '')
     file_path = File.join(data_path, file_name)
     File.open(file_path, 'w') { |file| file.write(contents) }
+  end
+
+  def session
+    last_request.env['rack.session']
   end
 
   def test_index
@@ -42,12 +46,10 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'changes.txt</a>' 
   end
 
-  def test_file_name_txt
+  def test_viewing_file_txt
     content = <<~ABOUT
       About Ruby
       Wondering why Ruby is so popular?
-      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
-      What gives?
     ABOUT
 
     create_document 'about.txt', content
@@ -58,28 +60,13 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'About Ruby' 
   end
 
-  def test_bad_file_name
-    get '/not_a_file.txt'
-
-    assert_equal 302, last_response.status
-
-    get last_response['Location']
-
-    assert_equal 200, last_response.status
-    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'not_a_file.txt does not exist.'
-
-    get '/'
-    refute_includes last_response.body, 'not_a_file.txt does not exist.'
-  end
-
-  def test_file_name_md
+  def test_viewing_file_md
     content = <<~ABOUT
       # About Ruby
-      Wondering why Ruby is so popular? Its fans call it a beautiful, artful language. And yet, they say it's handy and practical. What gives?
+      Wondering why Ruby is so popular?
     ABOUT
-    create_document('about.md', content)
 
+    create_document 'about.md', content
     get '/about.md'
 
     assert_equal 200, last_response.status
@@ -87,20 +74,28 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, '<h1>About Ruby</h1>'
   end
 
+  def test_viewing_nonexistent_file
+    get '/not_a_file.txt'
+
+    assert_equal 302, last_response.status
+    assert_equal 'not_a_file.txt does not exist.', session['message']
+
+    get last_response['Location']
+    assert_nil session['message']
+  end
+
   def test_edit_form
     content = <<~ABOUT
       # About Ruby
       Wondering why Ruby is so popular?
-      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
-      What gives?
     ABOUT
-    create_document('about.md', content)
+    create_document 'about.md', content
 
     get 'about.md/edit'
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, "What gives?\n</textarea>"
+    assert_includes last_response.body, "so popular?\n</textarea>"
     assert_includes last_response.body, '<button type="submit">Save Changes</button>'
   end
 
@@ -108,19 +103,16 @@ class CMSTest < Minitest::Test
     content = <<~ABOUT
       # About Ruby
       Wondering why Ruby is so popular?
-      Its fans call it a beautiful, artful language. And yet, they say it's handy and practical.
-      What gives?
     ABOUT
-    create_document('about.md', content)
+    create_document 'about.md', content
 
-    post '/about.md', 'content' => 'Hello World!'
+    post '/about.md', content: 'Hello World!'
 
     assert_equal 302, last_response.status
-    get last_response['Location']
+    assert_equal 'about.md has been updated.', session['message']
 
-    assert_equal 200, last_response.status
-    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'about.md has been updated.'
+    get last_response['Location']
+    assert_nil session['message']
 
     get '/about.md'
 
@@ -140,18 +132,18 @@ class CMSTest < Minitest::Test
   end
 
   def test_creating_a_file
-    post '/create', 'file_name' => 'new_file.txt'
+    post '/create', file_name: 'new_file.txt'
 
     assert_equal 302, last_response.status
-    get last_response['Location']
+    assert_equal 'new_file.txt was created.', session['message']
 
-    assert_equal 200, last_response.status
-    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'new_file.txt was created.'
+    get last_response['Location']
+    assert_nil session['message']
+    assert_includes last_response.body, 'new_file.txt</a>'
   end
 
   def test_creating_a_file_without_a_name
-    post '/create', 'file_name' => ''
+    post '/create', file_name: ''
 
     assert_equal 422, last_response.status
     assert_includes last_response.body, 'A name is required.'
@@ -169,14 +161,17 @@ class CMSTest < Minitest::Test
 
   def test_delete_a_file
     create_document 'new_file.txt'
+
     post '/new_file.txt/delete'
 
     assert_equal 302, last_response.status
+    assert_equal 'new_file.txt was deleted.', session['message']
+
     get last_response['Location']
+    assert_nil session['message']
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'new_file.txt was deleted.'
     refute_includes last_response.body, 'new_file.txt</a>'
     refute_includes last_response.body, 'action="/new_file.txt/delete"'
   end
@@ -205,38 +200,44 @@ class CMSTest < Minitest::Test
   end
 
   def test_valid_sign_in
-    post '/users/signin', 'username' => 'admin', 'password' => 'secret'
+    post '/users/signin', username: 'admin', password: 'secret'
 
     assert_equal 302, last_response.status
+    assert_equal 'Welcome!', session['message']
+    assert_equal 'admin', session['user']
+
     get last_response['Location']
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'Welcome!'
     assert_includes last_response.body, 'Signed in as admin.'
     assert_includes last_response.body, '<form action="/users/signout" method="post">'
     assert_includes last_response.body, '<button type="submit">Sign Out</button>'
   end
 
   def test_invalid_sign_in
-    post '/users/signin', 'username' => 'not_admin', 'password' => 'not_secret'
+    post '/users/signin', username: 'invalid_user', password: 'wrong_password'
 
     assert_equal 401, last_response.status
+    assert_nil session['user']
     assert_includes last_response.body, 'Invalid Credentials'
-    assert_includes last_response.body, '<input type="text" name="username" id="username" value="not_admin"'
+    assert_includes last_response.body, '<input type="text" name="username" id="username" value="invalid_user"'
   end
 
   def test_sign_out
-    post '/users/signin', 'username' => 'admin', 'password' => 'secret'
+    get '/', {}, { 'rack.session' => { user: 'admin' } }
+    assert_includes last_response.body, 'Signed in as admin'
 
     post '/users/signout'
 
     assert_equal 302, last_response.status
+    assert_equal 'You have been signed out.', session['message']
+
     get last_response['Location']
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'You have been signed out.'
+    assert_nil session['user']
 
     signin_button = <<~SIGNIN
       <form action="/users/signin" method="get">

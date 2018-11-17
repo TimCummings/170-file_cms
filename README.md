@@ -356,3 +356,54 @@ Now that the content in our CMS can be modified and new documents can be created
   * Signs the user out by deleting the `user` key from the session.
   * Sets the specified flash message.
   * Redirects to index.
+
+---
+
+### Accessing the Session While Testing - 11/16/2018
+
+Accessing the session from within tests is a little bit more involved than accessing the response's status, headers, or body. Just as `Rack::Test` makes the last response available as `last_response`, it makes the last request accessible within tests using `last_request`. We don't usually need to interact with the `MockRequest` object this method returns, but in the case of sessions, we need to.
+
+Requests and responses in Rack are associated with a large Hash of data related to a request-response pair, called the "env" by Rack internally. Some of the values in this hash are used by frameworks such as Sinatra and Rails to access the path, parameters, and other attributes of the request. The session implementation used by Sinatra is actually supplied by Rack, and as a result the session object also lives in this Hash. To access it within a test, we can use `last_request.env`. Note that the `last_request` method is used here and **not** `last_response`.
+
+> More info about `request.env` (known as the Rack Environment) can be found in the [specification for Rack](http://www.rubydoc.info/github/rack/rack/master/file/SPEC).
+
+To get at the session object and its values, we can use `last_request.env["rack.session"]`. It's a good idea to use a helper method such as this one in your tests so that the session can be referenced using just `session`:
+
+```ruby
+def session
+  last_request.env["rack.session"]
+end
+```
+
+Now, within a test, you can make assertions about the values within a session:
+
+```ruby
+def test_sets_session_value
+  get "/path_that_sets_session_value"
+  assert_equal "expected value", session[:key]
+end
+```
+
+If you need to go the other way (set a value in the session _before_ a request is made), `Rack::Test` allows values for the `Rack.env` hash to be provided to calls to `get` and `post` within a test. So a simple request like this one:
+
+```ruby
+def test_index
+  get "/"
+end
+```
+
+becomes this:
+
+```ruby
+def test_index_as_signed_in_user
+  get "/", {}, {"rack.session" => { username: "admin"} }
+end
+```
+
+There are two Hashes passed as arguments to `get`; the first is the Hash of parameters (which in this case is empty), and the second is values to be added to the request's `Rack.env` hash.
+
+Once values have been provided like this once, they will be remembered for all future calls to `get` or `post` within the same test, _unless_, of course, those values are modified by code within your application. This means that you can set values for the session in the first request made in a test and they will be retained until you remove them.
+
+**Implementation** (provided)
+
+Update all existing tests to use the above methods for verifying session values. This means that many tests will become shorter as assertions can be made directly about the session instead of the content of a response's body. Specifically, instead of loading a page using `get` and then checking to see if a given message is displayed on it, `session[:message]` can be used to access the session value directly.
