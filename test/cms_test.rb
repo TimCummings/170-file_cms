@@ -34,6 +34,10 @@ class CMSTest < Minitest::Test
     last_request.env['rack.session']
   end
 
+  def admin_session
+    { 'rack.session' => { user: 'admin' } }
+  end
+
   def test_index
     create_document 'about.md'
     create_document 'changes.txt'
@@ -47,12 +51,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_viewing_file_txt
-    content = <<~ABOUT
-      About Ruby
-      Wondering why Ruby is so popular?
-    ABOUT
-
-    create_document 'about.txt', content
+    create_document 'about.txt', 'About Ruby'
     get '/about.txt'
 
     assert_equal 200, last_response.status 
@@ -61,12 +60,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_viewing_file_md
-    content = <<~ABOUT
-      # About Ruby
-      Wondering why Ruby is so popular?
-    ABOUT
-
-    create_document 'about.md', content
+    create_document 'about.md', '# About Ruby'
     get '/about.md'
 
     assert_equal 200, last_response.status
@@ -79,40 +73,50 @@ class CMSTest < Minitest::Test
 
     assert_equal 302, last_response.status
     assert_equal 'not_a_file.txt does not exist.', session['message']
+  end
 
+  def test_flash_messages_disappear_after_being_shown
+    get '/not_a_file.txt'
+    assert_equal 'not_a_file.txt does not exist.', session['message']
     get last_response['Location']
     assert_nil session['message']
   end
 
-  def test_edit_form
-    content = <<~ABOUT
-      # About Ruby
-      Wondering why Ruby is so popular?
-    ABOUT
-    create_document 'about.md', content
+  def test_user_edit_form
+    create_document 'about.md', '# About Ruby'
 
-    get 'about.md/edit'
+    get 'about.md/edit', {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, "so popular?\n</textarea>"
+    assert_includes last_response.body, "# About Ruby</textarea>"
     assert_includes last_response.body, '<button type="submit">Save Changes</button>'
   end
 
-  def test_editing_a_file
-    content = <<~ABOUT
-      # About Ruby
-      Wondering why Ruby is so popular?
-    ABOUT
-    create_document 'about.md', content
+  def test_guest_edit_form
+    create_document 'about.md', '# About Ruby'
 
-    post '/about.md', content: 'Hello World!'
+    get 'about.md/edit'
+
+    assert_equal 401, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    refute_includes last_response.body, "About Ruby</textarea>"
+    refute_includes last_response.body, '<button type="submit">Save Changes</button>'
+  end
+
+  def test_user_editing_a_file
+    create_document 'about.md', '# About Ruby'
+
+    post '/about.md', { content: 'Hello World!' }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'about.md has been updated.', session['message']
 
     get last_response['Location']
-    assert_nil session['message']
 
     get '/about.md'
 
@@ -121,8 +125,26 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'Hello World!'
   end
 
-  def test_new_file_form
-    get '/new'
+  def test_guest_editing_a_file
+    create_document 'about.md', '# About Ruby'
+
+    post '/about.md', content: 'Hello World!'
+
+    assert_equal 401, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+
+    get '/about.md'
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html', last_response['Content-Type']
+    assert_includes last_response.body, 'About Ruby'
+    refute_includes last_response.body, 'Hello World!'
+  end
+
+  def test_user_new_file_form
+    get '/new', {}, admin_session
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
@@ -131,19 +153,43 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, '<button type="submit">Create</button>'
   end
 
-  def test_creating_a_file
-    post '/create', file_name: 'new_file.txt'
+  def test_guest_new_file_form
+    get '/new'
+
+    assert_equal 401, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    refute_includes last_response.body, 'Add a new document:'
+    refute_includes last_response.body, '<input type="text" name="file_name"'
+    refute_includes last_response.body, '<button type="submit">Create</button>'
+  end
+
+  def test_user_creating_a_file
+    post '/create', { file_name: 'new_file.txt' }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'new_file.txt was created.', session['message']
 
     get last_response['Location']
-    assert_nil session['message']
     assert_includes last_response.body, 'new_file.txt</a>'
   end
 
+  def test_guest_creating_a_file
+    post '/create', file_name: 'new_file.txt'
+
+    assert_equal 401, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+
+    refute_includes last_response.body, 'new_file.txt</a>'
+  end
+
   def test_creating_a_file_without_a_name
-    post '/create', file_name: ''
+    post '/create', { file_name: '' }, admin_session
 
     assert_equal 422, last_response.status
     assert_includes last_response.body, 'A name is required.'
@@ -159,21 +205,36 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'action="/new_file.txt/delete"'
   end
 
-  def test_delete_a_file
+  def test_user_delete_a_file
     create_document 'new_file.txt'
 
-    post '/new_file.txt/delete'
+    post '/new_file.txt/delete', {}, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'new_file.txt was deleted.', session['message']
 
     get last_response['Location']
-    assert_nil session['message']
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
     refute_includes last_response.body, 'new_file.txt</a>'
     refute_includes last_response.body, 'action="/new_file.txt/delete"'
+  end
+
+  def test_guest_delete_a_file
+    create_document 'new_file.txt'
+
+    post '/new_file.txt/delete'
+
+    assert_equal 401, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
+    assert_includes last_response.body, 'new_file.txt</a>'
+    assert_includes last_response.body, 'action="/new_file.txt/delete"'
   end
 
   def test_sign_in_button_is_present_on_index
@@ -225,7 +286,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_sign_out
-    get '/', {}, { 'rack.session' => { user: 'admin' } }
+    get '/', {}, admin_session
     assert_includes last_response.body, 'Signed in as admin'
 
     post '/users/signout'

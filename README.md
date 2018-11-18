@@ -407,3 +407,125 @@ Once values have been provided like this once, they will be remembered for all f
 **Implementation** (provided)
 
 Update all existing tests to use the above methods for verifying session values. This means that many tests will become shorter as assertions can be made directly about the session instead of the content of a response's body. Specifically, instead of loading a page using `get` and then checking to see if a given message is displayed on it, `session[:message]` can be used to access the session value directly.
+
+---
+
+### Restricting Actions to Only Signed-in Users - 11/17/2018
+
+Adding the concept of signed-in users to this project allows the ability to restrict certain actions (those that result in changes to data) to only those signed-in users. This is a very common model in web applications, where guest (signed-out) users can access resources but not make any changes to them.
+
+> Sinatra's `redirect` method has some behavior that is not obvious from [the documentation](http://www.sinatrarb.com/intro.html#Browser%20Redirect) but will be useful in this assignment: it aborts handling of the current request. This means that in the following code:
+
+```ruby
+get "/" do
+  redirect "/lists"
+  erb :home
+end
+```
+
+> `erb :home` is never executed because the `redirect` call terminates the request handling early. This is convenient because it means that redirecting can be used to short-circuit the logic within a route or helper. It does, however, violate the way that routes work otherwise, which is that their return value is what is sent back to the client.
+>
+> Internally, `redirect` calls `halt`, which is the method that actually aborts the request handling. You can read more about `halt` [in the documentation](http://www.sinatrarb.com/intro.html#Halting) and in [this blog post](http://myronmars.to/n/dev-blog/2012/01/why-sinatras-halt-is-awesome).
+
+There are two ways to "sign in" a user within a test. The first is to sign in using the sign in form, and then test functionality that requires a user to be signed in:
+
+```ruby
+def test_editing_document
+  # Submit the sign in form
+  post "/users/signin", username: "admin", password: "secret"
+
+  # Verify the user is signed in
+  assert_equal "admin", session[:username]
+
+  # Then, test something that required being signed in
+  get "/changes.txt/edit"
+
+  assert_equal 200, last_response.status
+end
+```
+
+This works fine early in a project, when things are simple and there aren't a lot of tests. But if the sign in process ever changes, it will break a bunch of tests that are only using the sign-in functionality of the site to get a signed in user that can then be used to test some other part of the application. There are a couple ways to address this. The most obvious is to put the sign-in code within a method, and call it from within other tests:
+
+```ruby
+def sign_in_user
+  # Submit the sign in form
+  post "/users/signin", username: "admin", password: "secret"
+
+  # Verify the user is signed in
+  assert_equal "admin", session[:username]
+end
+
+...
+
+def test_editing_document
+  sign_in_user
+
+  # Then, test something that required being signed in
+  get "/changes.txt/edit"
+
+  assert_equal 200, last_response.status
+end
+```
+
+This is an improvement, but it still means going through the sign in process at the beginning of many tests. In the case of some applications, nearly all the functionality involves being within the context of a user, and that means most of the tests will have to create a signed in user. This makes the test suite slow to run.
+
+Instead of walking through the sign-in process within each test, another option is to set the same values in the session ourselves that would be set by successfully submitting the sign in form. This way, we can skip the sign in process entirely and move right on to the purpose of each test. `Rack::Test` provides a way to set values into its internal `env` hash by passing them as the third argument to any of the request-making methods such as `get` and `post`. We can use this to provide a value for `rack.session,` which is what Rack uses internally to store the values in the session.
+
+```ruby
+def test_editing_document
+  # By passing a value for the session, we can skip right to testing
+  # functionality that requires being signed in. The second argument is
+  # an empty hash because we aren't passing any params to the request.
+  get "/changes.txt/edit", {}, { "rack.session" => { username: "admin" } }
+
+  assert_equal 200, last_response.status
+end
+```
+
+In order to make our tests a bit cleaner and avoid repeating the nested Hash structure over and over again, it can be moved to a method:
+
+```ruby
+def admin_session
+  { "rack.session" => { username: "admin" } }
+end
+
+...
+
+def test_editing_document
+  get "/changes.txt/edit", {}, admin_session
+
+  assert_equal 200, last_response.status
+end
+```
+
+Keep in mind that a value that is set into the session using this technique will remain there until it is cleared by the application or a test. This means that if multiple requests are made within a test, only the first one needs to pass along the `admin_session`:
+
+```ruby
+def test_editing_document
+  get "/changes.txt/edit", {}, admin_session
+
+  assert_equal 200, last_response.status
+
+  # Already signed in, so no need to pass values for rack.session
+  get "/changes.txt/edit"
+
+  assert_equal 200, last_response.status
+end
+```
+
+**Requirements**
+
+* When a signed-out user attempts to perform the following actions, they should be redirected back to the index and shown a message that says "You must be signed in to do that.":
+  * Visit the edit page for a document
+  * Submit changes to a document
+  * Visit the new document page
+  * Submit the new document form
+  * Delete a document
+
+**Implementation**
+
+* In the specified privileged routes, check for a signed in user.
+  * If not present, set the specified session message and redirect to index.
+  * If present, continue with existing behavior already in the route.
+* In the test file, define an `admin_session` method that returns a hash with a `'rack.session'` key with a value of `{ username: 'admin' }`.
+* Implement tests for each of the specified privileged routes that test both cases (signed in user and no user).

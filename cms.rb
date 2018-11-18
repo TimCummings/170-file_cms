@@ -44,7 +44,14 @@ def render_markdown(text)
 end
 
 def user?
-  !session['user'].nil? && !session['user'].empty?
+  session.key?('user')
+end
+
+def halt_unless_authorized
+  unless user?
+    session['message'] = 'You must be signed in to do that.'
+    redirect '/', 401
+  end
 end
 
 # index: view a list of files
@@ -56,11 +63,15 @@ end
 
 # render new file form
 get '/new' do
+  halt_unless_authorized
+
   erb :new
 end
 
 # create a new file
 post '/create' do
+  halt_unless_authorized
+
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
 
@@ -90,6 +101,8 @@ end
 
 # render edit file form
 get '/:file_name/edit' do
+  halt_unless_authorized
+
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
 
@@ -104,6 +117,8 @@ end
 
 # edit a file by name
 post '/:file_name' do
+  halt_unless_authorized
+
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
   @content = params['content']
@@ -120,6 +135,8 @@ end
 
 # delete a file
 post '/:file_name/delete' do
+  halt_unless_authorized
+
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
 
