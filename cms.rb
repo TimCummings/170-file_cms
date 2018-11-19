@@ -6,6 +6,7 @@ require 'sinatra/reloader' if development?
 require 'tilt/erubis'
 require 'redcarpet'
 require 'psych'
+require 'bcrypt'
 
 configure do
   enable :sessions
@@ -52,7 +53,7 @@ end
 def authentic_user?(username, password)
   users_path = File.join(build_path('config'), 'users.yml')
   users = Psych.load_file(users_path)
-  users.key?(username) && users[username] == password
+  users.key?(username) && BCrypt::Password.new(users[username]) == password
 end
 
 # true if user is signed in

@@ -561,3 +561,34 @@ The user credentials can be stored in a Hash, with usernames as keys and passwor
 
 * Adjust `config_path` method to use `/test/config/users.yml` during testing.
 * Users only need to be read from file for the signing in route, not every route.
+
+---
+
+### Storing Hashed Passwords - 11/19/2018
+
+So far we've been storing passwords as plain text, which is something that should **never** be done in a production application. User passwords should always be stored after being _hashed_, which is a one-way operation that makes the original content of the password practically impossible to recover. In order to compare a password provided by a user (say, in a `params` hash) with a hashed password, the raw password is hashed using the same algorithm. The resulting hashed value is then compared to the stored hashed value. If they match, then the original values of both hashes were the same.
+
+The benefit here is that you don't have to store the raw password anywhere. So if someone were to gain access to the file or database where the passwords are stored, the passwords can't be used on other sites (it is extremely common for users to use the same passwords across different sites). Reducing this kind of liability is a good security practice.
+
+> For some more background on user authentication and hashing passwords, read [this article](https://launchschool.com/blog/authentication-methods-in-rails) (it talks about authentication within Rails, but the information on password hashing is still relevant to our purposes.)
+
+> For more information on **bcrypt**, the hashing technique we're using in this project, read [this article](http://dustwell.com/how-to-handle-passwords-bcrypt.html).
+
+**Requirements**
+
+1. User passwords must be hashed using bcrypt before being stored so that raw passwords are not being stored anywhere.
+
+**Implementation**
+
+* Update `Gemfile` to require `bcrypt` and `bundle install`.
+* In the app file, `require bcrypt`.
+* Edit `users.yml` to save a bcrypt hashed password instead of plaintext.
+  * This app doesn't yet have the ability to create new users, so this can be done in IRB: `digest = BCrypt::Password.create(password)`
+* Refactor app's authentication method:
+  * Create a new BCrypt password with user's input: `BCrypt::Password.new(digest) == password`
+  * Compare this new hashed password with the stored hashed password for authentication.
+
+**Questions**
+
+1. _True or false_: Running the same password through `bcrypt` multiple times will result in the same hashed value every time.
+> False: running the same password through `bcrypt` multiple times will result in different hashed values because `bcrypt` uses a "per user" salt: the salt is randomized for each "new" password (each "run through").

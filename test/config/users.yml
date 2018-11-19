@@ -1,4 +1,4 @@
 # users.yml for testing
 ---
-test_user: opensesame
+test_user: '$2a$10$BtnKFhcp.FoY9GWEwqYzXOetQ9Ocr.mKIjrT3ltcQbEyKBeTHj9Ii'
 ...

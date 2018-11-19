@@ -1,4 +1,4 @@
 # users.yml
 ---
-admin: secret
+admin: '$2a$10$khzr2x.MoQJwQM3rshw92.dzV78cDq6npKLuN21HX/AX5ujDttawa'
 ...
