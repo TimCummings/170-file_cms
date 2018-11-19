@@ -21,20 +21,17 @@ def root
   File.expand_path('..', __FILE__)
 end
 
-def data_path
+def build_path(path_name)
   if ENV['RACK_ENV'] == 'test'
-    File.join(root, 'test', 'data')
+    File.join(root, 'test', path_name)
   else
-    File.join(root, 'data')
+    File.join(root, path_name)
   end
 end
 
-def config_path
-  if ENV['RACK_ENV'] == 'test'
-    File.join(root, 'test', 'config')
-  else
-    File.join(root, 'config')
-  end
+def set_file_info
+  @file_name = params['file_name']
+  @file_path = File.join(build_path('data'), @file_name)
 end
 
 def load_content(file_path)
@@ -53,10 +50,12 @@ def render_markdown(text)
 end
 
 def authentic_user?(username, password)
-  users = Psych.load_file(File.join(config_path, 'users.yml'))
+  users_path = File.join(build_path('config'), 'users.yml')
+  users = Psych.load_file(users_path)
   users.key?(username) && users[username] == password
 end
 
+# true if user is signed in
 def user?
   session.key? 'user'
 end
@@ -68,24 +67,16 @@ def redirect_unless_authorized
   end
 end
 
-def load_file_list
-  pattern = File.join(data_path, '*')
-  @files = Dir.glob(pattern).map { |path| File.basename(path) }
-end
-
-before do
-  load_file_list
-end
-
 # index: view a list of files
 get '/' do
+  pattern = File.join(build_path('data'), '*')
+  @files = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :index
 end
 
 # render new file form
 get '/new' do
   redirect_unless_authorized
-
   erb :new
 end
 
@@ -93,15 +84,13 @@ end
 post '/create' do
   redirect_unless_authorized
 
-  @file_name = params['file_name']
-  file_path = File.join(data_path, @file_name)
-
+  set_file_info
   if @file_name.strip.empty?
     session['message'] = 'A name is required.'
     status 422
     erb :new
   else
-    FileUtils.touch file_path
+    FileUtils.touch @file_path
     session['message'] = "#{@file_name} was created."
     redirect '/'
   end
@@ -109,11 +98,9 @@ end
 
 # view a file by name
 get '/:file_name' do
-  @file_name = params['file_name']
-  file_path = File.join(data_path, @file_name)
-
-  if File.file? file_path
-    load_content file_path
+  set_file_info
+  if File.file? @file_path
+    load_content @file_path
   else
     session['message'] = "#{@file_name} does not exist."
     redirect '/'
@@ -124,11 +111,9 @@ end
 get '/:file_name/edit' do
   redirect_unless_authorized
 
-  @file_name = params['file_name']
-  file_path = File.join(data_path, @file_name)
-
-  if File.file? file_path
-    @content = File.read file_path
+  set_file_info
+  if File.file? @file_path
+    @content = File.read @file_path
     erb :edit
   else
     session['message'] = "#{@file_name} does not exist."
@@ -140,12 +125,11 @@ end
 post '/:file_name' do
   redirect_unless_authorized
 
-  @file_name = params['file_name']
-  file_path = File.join(data_path, @file_name)
+  set_file_info
   @content = params['content']
 
-  if File.file? file_path
-    File.write file_path, @content
+  if File.file? @file_path
+    File.write @file_path, @content
     session['message'] = "#{@file_name} has been updated."
   else
     session['message'] = "#{@file_name} does not exist."
@@ -158,10 +142,9 @@ end
 post '/:file_name/delete' do
   redirect_unless_authorized
 
-  @file_name = params['file_name']
-  file_path = File.join(data_path, @file_name)
+  set_file_info
 
-  FileUtils.rm file_path
+  FileUtils.rm @file_path
   session['message'] = "#{@file_name} was deleted."
   redirect '/'
 end
