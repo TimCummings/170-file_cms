@@ -529,3 +529,35 @@ end
   * If present, continue with existing behavior already in the route.
 * In the test file, define an `admin_session` method that returns a hash with a `'rack.session'` key with a value of `{ username: 'admin' }`.
 * Implement tests for each of the specified privileged routes that test both cases (signed in user and no user).
+
+---
+
+### Storing User Accounts in an External File - 11/18/2018
+
+**Requirements**
+
+1. An administrator should be able to modify the list of users who may sign into the application by editing a configuration file using their text editor.
+
+**Hint**
+
+YAML is a good format to use to store this type of data because it can store data structures (as opposed to simple values such as Strings) and it can be easily read both by a Ruby program and a human.
+
+The user credentials can be stored in a Hash, with usernames as keys and passwords as values:
+
+```
+{
+  bill: billspassword,
+  sonia: soniaspassword
+}
+```
+
+**Implementation**
+
+* Create `users.yml`, a YAML configuration file to contain a list of users and passwords.
+* In the main app file, in a `before` block, read users and passwords from `users.yml` into instance variables.
+* Refactor authentication from being hard coded to being a method that compares against the instance variables of users and passwords.
+
+**Corrections based on provided Implementation/Solution**
+
+* Adjust `config_path` method to use `/test/config/users.yml` during testing.
+* Users only need to be read from file for the signing in route, not every route.

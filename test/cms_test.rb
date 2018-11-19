@@ -35,7 +35,7 @@ class CMSTest < Minitest::Test
   end
 
   def admin_session
-    { 'rack.session' => { user: 'admin' } }
+    { 'rack.session' => { user: 'test_user' } }
   end
 
   def test_index
@@ -98,7 +98,7 @@ class CMSTest < Minitest::Test
 
     get 'about.md/edit'
 
-    assert_equal 401, last_response.status
+    assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
 
     get last_response['Location']
@@ -130,10 +130,8 @@ class CMSTest < Minitest::Test
 
     post '/about.md', content: 'Hello World!'
 
-    assert_equal 401, last_response.status
+    assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
-
-    get last_response['Location']
 
     get '/about.md'
 
@@ -156,7 +154,7 @@ class CMSTest < Minitest::Test
   def test_guest_new_file_form
     get '/new'
 
-    assert_equal 401, last_response.status
+    assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
 
     get last_response['Location']
@@ -180,7 +178,7 @@ class CMSTest < Minitest::Test
   def test_guest_creating_a_file
     post '/create', file_name: 'new_file.txt'
 
-    assert_equal 401, last_response.status
+    assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
 
     get last_response['Location']
@@ -226,12 +224,11 @@ class CMSTest < Minitest::Test
 
     post '/new_file.txt/delete'
 
-    assert_equal 401, last_response.status
+    assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
 
     get last_response['Location']
 
-    assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
     assert_includes last_response.body, 'new_file.txt</a>'
     assert_includes last_response.body, 'action="/new_file.txt/delete"'
@@ -261,17 +258,17 @@ class CMSTest < Minitest::Test
   end
 
   def test_valid_sign_in
-    post '/users/signin', username: 'admin', password: 'secret'
+    post '/users/signin', username: 'test_user', password: 'opensesame'
 
     assert_equal 302, last_response.status
     assert_equal 'Welcome!', session['message']
-    assert_equal 'admin', session['user']
+    assert_equal 'test_user', session['user']
 
     get last_response['Location']
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, 'Signed in as admin.'
+    assert_includes last_response.body, 'Signed in as test_user.'
     assert_includes last_response.body, '<form action="/users/signout" method="post">'
     assert_includes last_response.body, '<button type="submit">Sign Out</button>'
   end
@@ -287,7 +284,7 @@ class CMSTest < Minitest::Test
 
   def test_sign_out
     get '/', {}, admin_session
-    assert_includes last_response.body, 'Signed in as admin'
+    assert_includes last_response.body, 'Signed in as test_user'
 
     post '/users/signout'
 

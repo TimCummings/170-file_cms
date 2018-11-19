@@ -5,6 +5,7 @@ require 'sinatra/content_for'
 require 'sinatra/reloader' if development?
 require 'tilt/erubis'
 require 'redcarpet'
+require 'psych'
 
 configure do
   enable :sessions
@@ -17,7 +18,7 @@ EXT_TYPE = {
 }
 
 def root
-  File.expand_path '..', __FILE__
+  File.expand_path('..', __FILE__)
 end
 
 def data_path
@@ -25,6 +26,14 @@ def data_path
     File.join(root, 'test', 'data')
   else
     File.join(root, 'data')
+  end
+end
+
+def config_path
+  if ENV['RACK_ENV'] == 'test'
+    File.join(root, 'test', 'config')
+  else
+    File.join(root, 'config')
   end
 end
 
@@ -43,34 +52,46 @@ def render_markdown(text)
   markdown.render(text)
 end
 
-def user?
-  session.key?('user')
+def authentic_user?(username, password)
+  users = Psych.load_file(File.join(config_path, 'users.yml'))
+  users.key?(username) && users[username] == password
 end
 
-def halt_unless_authorized
+def user?
+  session.key? 'user'
+end
+
+def redirect_unless_authorized
   unless user?
     session['message'] = 'You must be signed in to do that.'
-    redirect '/', 401
+    redirect '/'
   end
+end
+
+def load_file_list
+  pattern = File.join(data_path, '*')
+  @files = Dir.glob(pattern).map { |path| File.basename(path) }
+end
+
+before do
+  load_file_list
 end
 
 # index: view a list of files
 get '/' do
-  pattern = File.join(data_path, '*')
-  @files = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :index
 end
 
 # render new file form
 get '/new' do
-  halt_unless_authorized
+  redirect_unless_authorized
 
   erb :new
 end
 
 # create a new file
 post '/create' do
-  halt_unless_authorized
+  redirect_unless_authorized
 
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
@@ -101,7 +122,7 @@ end
 
 # render edit file form
 get '/:file_name/edit' do
-  halt_unless_authorized
+  redirect_unless_authorized
 
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
@@ -117,7 +138,7 @@ end
 
 # edit a file by name
 post '/:file_name' do
-  halt_unless_authorized
+  redirect_unless_authorized
 
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
@@ -135,7 +156,7 @@ end
 
 # delete a file
 post '/:file_name/delete' do
-  halt_unless_authorized
+  redirect_unless_authorized
 
   @file_name = params['file_name']
   file_path = File.join(data_path, @file_name)
@@ -152,7 +173,7 @@ end
 
 # attempt to sign in the user with provided credentials
 post '/users/signin' do
-  if params['username'] == 'admin' && params['password'] == 'secret'
+  if authentic_user?(params['username'], params['password'])
     session['user'] = params['username']
     session['message'] = 'Welcome!'
     redirect '/'
