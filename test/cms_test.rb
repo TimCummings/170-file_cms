@@ -25,9 +25,9 @@ class CMSTest < Minitest::Test
     FileUtils.rm_rf build_path('data')
   end
 
-  def create_document(file_name, contents = '')
+  def create_document(file_name, content = '')
     file_path = File.join(build_path('data'), file_name)
-    File.open(file_path, 'w') { |file| file.write(contents) }
+    File.open(file_path, 'w') { |file| file.write(content) }
   end
 
   def session
@@ -80,6 +80,35 @@ class CMSTest < Minitest::Test
     assert_equal 'not_a_file.txt does not exist.', session['message']
     get last_response['Location']
     assert_nil session['message']
+  end
+
+  def test_user_duplicating_a_file
+    create_document 'about.md', '# About Ruby'
+
+    post '/about.md/duplicate', {}, admin_session
+
+    assert_equal 302, last_response.status
+    assert_equal 'Duplicated about.md as about-copy.md.', session['message']
+
+    get last_response['Location']
+    assert_includes last_response.body, 'about-copy.md</a>'
+
+    get '/about-copy.md'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, '<h1>About Ruby</h1>'
+  end
+
+  def test_guest_duplicating_a_file
+    create_document 'about.md', '# About Ruby'
+
+    post '/about.md/duplicate'
+
+    assert_equal 302, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+
+    get last_response['Location']
+    refute_includes last_response.body, 'about-copy.md</a>'
   end
 
   def test_user_edit_form

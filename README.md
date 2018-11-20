@@ -600,7 +600,7 @@ The benefit here is that you don't have to store the raw password anywhere. So i
 We encourage you to explore this project further or create another of your own to practice some of the techniques we've covered in this project and the course as a whole. Here are a few ideas:
 
 ---
-#### 1. Validate that document names contain an extension that the application supports.
+#### 1. Validate that document names contain an extension that the application supports. - 11/19/2018
 
 **Implementation**
 
@@ -612,7 +612,20 @@ We encourage you to explore this project further or create another of your own t
 
 ---
 
-Add a "duplicate" button that creates a new document based on an old one.
+#### 2. Add a "duplicate" button that creates a new document based on an old one. - 11/19/2018
+
+**Implementation**
+
+* Update the index view template to include a duplicate button next to each document.
+* Create a `post '/:file_name/duplicate'` route for the duplicate button to link to. In this route:
+  * Append `'-copy'` to the file name (before the file extension.)
+  * Write the duplicate file with the modified name and same content.
+  * Set a suitable session message.
+  * Redirect to index.
+* Restrict duplication to signed-in users; this could be easily abused with no defense otherwise.
+
+---
+
 Extend this project with a user signup form.
 Add the ability to upload images to the CMS (which could be referenced within markdown files).
 Modify the CMS so that each version of a document is preserved as changes are made to it.

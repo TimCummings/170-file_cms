@@ -123,6 +123,22 @@ get '/:file_name' do
   end
 end
 
+# duplicate a file by name
+post '/:file_name/duplicate' do
+  redirect_unless_authorized
+
+  original_name = params['file_name']
+  content = File.read(File.join(build_path('data'), original_name))
+
+  @file_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
+  @file_path = File.join(build_path('data'), @file_name)
+
+  File.open(@file_path, 'w') { |file| file.write(content) }
+
+  session['message'] = "Duplicated #{original_name} as #{@file_name}."
+  redirect '/'
+end
+
 # render edit file form
 get '/:file_name/edit' do
   redirect_unless_authorized
