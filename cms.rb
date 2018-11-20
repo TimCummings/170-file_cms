@@ -37,7 +37,7 @@ end
 
 def load_content(file_path)
   content = File.read file_path
-  headers['Content-Type'] = EXT_TYPE[File.extname(file_path)]
+  headers['Content-Type'] = EXT_TYPE[File.extname(file_path)] || 'text/plain'
 
   case File.extname(file_path)
   when '.md' then render_markdown(content)
@@ -48,6 +48,19 @@ end
 def render_markdown(text)
   markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
   markdown.render(text)
+end
+
+def error_for_file_name(file_name)
+  file_name = file_name.strip
+  file_extension = File.extname(file_name)
+
+  if file_name.empty?
+    'A name is required.'
+  elsif file_extension.empty?
+    'A valid file extension is required (e.g. .txt).'
+  elsif !EXT_TYPE.key?(file_extension)
+    "#{file_extension} extension is not currently supported."
+  end
 end
 
 def authentic_user?(username, password)
@@ -86,9 +99,11 @@ post '/create' do
   redirect_unless_authorized
 
   set_file_info
-  if @file_name.strip.empty?
-    session['message'] = 'A name is required.'
+
+  error = error_for_file_name(@file_name)
+  if error
     status 422
+    session['message'] = error
     erb :new
   else
     FileUtils.touch @file_path

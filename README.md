@@ -592,3 +592,27 @@ The benefit here is that you don't have to store the raw password anywhere. So i
 
 1. _True or false_: Running the same password through `bcrypt` multiple times will result in the same hashed value every time.
 > False: running the same password through `bcrypt` multiple times will result in different hashed values because `bcrypt` uses a "per user" salt: the salt is randomized for each "new" password (each "run through").
+
+---
+
+### Next Steps - 11/19/2018
+
+We encourage you to explore this project further or create another of your own to practice some of the techniques we've covered in this project and the course as a whole. Here are a few ideas:
+
+---
+#### 1. Validate that document names contain an extension that the application supports.
+
+**Implementation**
+
+* App already checks file extension to set `Content-Type` header; extend this behavior:
+  * If there is no extension, raise an error, set a suitable session message, and redirect to index.
+  * If there is an unsupported extension, app could either:
+    * raise an error, set a suitable session message, and redirect to index, or...
+    * ~~exert a "best effort" at displaying the file - probably either as html or plain text. Experiment.~~ Since files can't currently be uploaded, it doesn't make sense to "best effort" render unsupported extensions; when the best effort works, you get non txt extensions that are displayed as plain text, rendering the extension meaningless.
+
+---
+
+Add a "duplicate" button that creates a new document based on an old one.
+Extend this project with a user signup form.
+Add the ability to upload images to the CMS (which could be referenced within markdown files).
+Modify the CMS so that each version of a document is preserved as changes are made to it.

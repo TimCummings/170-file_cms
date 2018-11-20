@@ -193,6 +193,20 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'A name is required.'
   end
 
+  def test_creating_a_file_without_an_extension
+    post '/create', { file_name: 'scratch' }, admin_session
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'A valid file extension is required (e.g. .txt).'
+  end
+
+  def test_creating_a_file_with_unsupported_extension
+    post '/create', { file_name: 'scratch.pdf' }, admin_session
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, '.pdf extension is not currently supported.'
+  end
+
   def test_delete_button_is_present_on_index
     create_document 'new_file.txt'
     get '/'
