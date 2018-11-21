@@ -5,12 +5,12 @@
       <span><a href="/<%= file %>"><%= file %></a></span>
       <span><a href="<%= file %>/edit">Edit</a></span>
       <span>
-        <form class="button" action="/<%= file %>/duplicate" method="post">
+        <form class="button" method="post" action="/<%= file %>/duplicate">
           <button type="submit">duplicate</button>
         </form>
       </span>
       <span>
-        <form class="button" action="/<%= file %>/delete" method="post">
+        <form class="button" method="post" action="/<%= file %>/delete">
           <button type="submit">delete</button>
         </form>
       </span>
@@ -23,12 +23,12 @@
 <br /><br />
 
 <% if user? %>
-  <form action="/users/signout" method="post">
+  <form method="post" action="/users/signout">
     <em>Signed in as <%= session['user'] %>.</em>
     <button type="submit">Sign Out</button>
   </form>
 <% else %>
-  <form action="/users/signin" method="get">
+  <form method="get" action="/users/signin">
     <button type="submit">Sign In</button>
   </form>
 <% end %>

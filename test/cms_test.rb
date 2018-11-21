@@ -279,7 +279,7 @@ class CMSTest < Minitest::Test
 
   def test_sign_in_button_is_present_on_index
     signin_button = <<~SIGNIN
-      <form action="/users/signin" method="get">
+      <form method="get" action="/users/signin">
           <button type="submit">Sign In</button>
     SIGNIN
 
@@ -294,7 +294,7 @@ class CMSTest < Minitest::Test
 
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
-    assert_includes last_response.body, '<form action="/users/signin" method="post">'
+    assert_includes last_response.body, '<form method="post" action="/users/signin">'
     assert_includes last_response.body, '<input type="text" name="username"'
     assert_includes last_response.body, '<input type="password" name="password"'
     assert_includes last_response.body, '<button type="submit">Sign In</button>'
@@ -312,7 +312,7 @@ class CMSTest < Minitest::Test
     assert_equal 200, last_response.status
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
     assert_includes last_response.body, 'Signed in as test_user.'
-    assert_includes last_response.body, '<form action="/users/signout" method="post">'
+    assert_includes last_response.body, '<form method="post" action="/users/signout">'
     assert_includes last_response.body, '<button type="submit">Sign Out</button>'
   end
 
@@ -341,7 +341,7 @@ class CMSTest < Minitest::Test
     assert_nil session['user']
 
     signin_button = <<~SIGNIN
-      <form action="/users/signin" method="get">
+      <form method="get" action="/users/signin">
           <button type="submit">Sign In</button>
     SIGNIN
 
