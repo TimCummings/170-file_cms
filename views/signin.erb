@@ -1,4 +1,6 @@
 <!-- signin.erb -->
+<h3>Sign In</h3>
+
 <form method="post" action="/users/signin">
   <label for="username">Username:</label>
   <input type="text" name="username" id="username" value="<%= params['username'] %>">
@@ -11,4 +13,25 @@
   <br />
 
   <button type="submit">Sign In</button>
+</form>
+
+<h3>Sign Up</h3>
+
+<form method="post" action="/users">
+  <label for="new_username">New Username:</label>
+  <input type="text" name="new_username" id="new_username" value="<%= params['new_username'] %>">
+
+  <br />
+
+  <label for="new_password">New Password:</label>
+  <input type="password" name="new_password" id="new_password">
+
+  <br />
+
+  <label for="confirm_new_password">Confirm New Password:</label>
+  <input type="password" name="confirm_new_password" id="confirm_new_password">
+
+  <br />
+
+  <button type="submit">Sign Up</button>
 </form>

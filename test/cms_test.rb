@@ -347,4 +347,77 @@ class CMSTest < Minitest::Test
 
     assert_includes last_response.body, signin_button
   end
+
+  def test_create_new_user
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+
+    assert_equal 302, last_response.status
+    assert_equal 'temp_user', session['user']
+
+    post '/users/signout'
+
+    assert_equal 302, last_response.status
+    assert_nil session['user']
+
+    post '/users/signin', username: 'temp_user', password: 'temppass'
+
+    assert_equal 302, last_response.status
+    assert_equal 'temp_user', session['user']
+
+    delete_user('temp_user')
+  end
+
+  def test_create_new_user_with_empty_name
+    post '/users'
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'A new username is required.'
+  end
+
+  def test_create_new_user_with_whitespace_name
+    post '/users', new_username: '         '
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'A new username is required.'
+  end
+
+  def test_create_new_user_with_empty_password
+    post '/users', new_username: 'buggy_user'
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'A new password is required.'
+  end
+
+  def test_create_new_user_with_empty_confirm_password
+    post '/users', new_username: 'buggy_user', new_password: 'youwillneverguess'
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'New password must be confirmed.'
+  end
+
+  def test_create_new_user_with_mismatched_passwords
+    post '/users', new_username: 'buggy_user', new_password: 'match', confirm_new_password: 'notamatch'
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Passwords don't match."
+  end
+
+  def test_create_duplicate_user
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+
+    assert_equal 302, last_response.status
+    assert_equal 'temp_user', session['user']
+
+    post '/users/signout'
+
+    assert_equal 302, last_response.status
+    assert_nil session['user']
+
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'User temp_user already exists.'
+
+    delete_user('temp_user')
+  end
 end

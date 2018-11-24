@@ -63,10 +63,31 @@ def error_for_file_name(file_name)
   end
 end
 
+# read list of users from config file
+def all_users
+  Psych.load_file(File.join(build_path('config'), 'users.yml'))
+end
+
+def add_user(username, digest)
+  users = all_users
+  users[username] = digest
+
+  File.open(File.join(build_path('config'), 'users.yml'), 'w') do |file|
+    file.write Psych.dump(users)
+  end
+end
+
+def delete_user(username)
+  users = all_users
+  users.delete username
+
+  File.open(File.join(build_path('config'), 'users.yml'), 'w') do |file|
+    file.write Psych.dump(users)
+  end
+end
+
 def authentic_user?(username, password)
-  users_path = File.join(build_path('config'), 'users.yml')
-  users = Psych.load_file(users_path)
-  users.key?(username) && BCrypt::Password.new(users[username]) == password
+  all_users.key?(username) && BCrypt::Password.new(all_users[username]) == password
 end
 
 # true if user is signed in
@@ -81,11 +102,68 @@ def redirect_unless_authorized
   end
 end
 
+def error_for_new_user(new_username, new_password, confirm_new_password)
+  if new_username.nil? || new_username.strip.empty?
+    'A new username is required.'
+  elsif new_password.nil? || new_password.strip.empty?
+    'A new password is required.'
+  elsif confirm_new_password.nil? || confirm_new_password.strip.empty?
+    'New password must be confirmed.'
+  elsif new_password != confirm_new_password
+    "Passwords don't match."
+  elsif all_users.key? new_username
+    "User #{new_username} already exists."
+  end
+end
+
 # index: view a list of files
 get '/' do
   pattern = File.join(build_path('data'), '*')
   @files = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :index
+end
+
+# create a new user
+post '/users' do
+  @new_username = params['new_username']
+
+  error = error_for_new_user(@new_username, params['new_password'], params['confirm_new_password'])
+  if error
+    session['message'] = error
+    status 422
+    erb :signin
+  else
+    digest = BCrypt::Password.create params['new_password']
+    add_user @new_username, digest
+    session['user'] = @new_username
+    session['message'] = "Created user #{@new_username}."
+    redirect '/'
+  end
+end
+
+# render signin form
+get '/users/signin' do
+  erb :signin
+end
+
+# attempt to sign in the user with provided credentials
+post '/users/signin' do
+  if authentic_user?(params['username'], params['password'])
+    session['user'] = params['username']
+    session['message'] = 'Welcome!'
+    redirect '/'
+  else
+    session['message'] = 'Invalid Credentials'
+    status 401
+    erb :signin
+  end
+end
+
+# sign out
+post '/users/signout' do
+  session.delete 'user'
+  session['message'] = 'You have been signed out.'
+  redirect '/'
 end
 
 # render new file form
@@ -181,27 +259,3 @@ post '/:file_name/delete' do
   redirect '/'
 end
 
-# render signin form
-get '/users/signin' do
-  erb :signin
-end
-
-# attempt to sign in the user with provided credentials
-post '/users/signin' do
-  if authentic_user?(params['username'], params['password'])
-    session['user'] = params['username']
-    session['message'] = 'Welcome!'
-    redirect '/'
-  else
-    session['message'] = 'Invalid Credentials'
-    status 401
-    erb :signin
-  end
-end
-
-# sign out
-post '/users/signout' do
-  session.delete 'user'
-  session['message'] = 'You have been signed out.'
-  redirect '/'
-end

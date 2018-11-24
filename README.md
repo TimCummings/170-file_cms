@@ -626,6 +626,30 @@ We encourage you to explore this project further or create another of your own t
 
 ---
 
-Extend this project with a user signup form.
+#### Extend this project with a user signup form. - 11/20/2018
+
+**Implementation**
+
+* Add a `signup` form to the signin view containing:
+  * `new_username`
+  * `new_password`
+  * `confirm_new_password`
+* Create a `post '/users'` route that:
+  * Validates inputs:
+    * both passwords match
+    * the `new_username` does not already exist
+  * If invalid:
+    * Set an appropriate session message.
+    * Re-render the signin view, re-populating the `new_username` field if the user had filled it in.
+  * If valid:
+    * Read the users hash from `users.yml`
+    * Add the new user to the hash with the the user_name as the key and the BCrypt hashed password as the value.
+    * Open `users.yml` for truncating write, write the modified users hash, and close.
+    * Sign in as the new user.
+    * Set an appropriate session message.
+    * Redirect to index.
+
+---
+
 Add the ability to upload images to the CMS (which could be referenced within markdown files).
 Modify the CMS so that each version of a document is preserved as changes are made to it.
