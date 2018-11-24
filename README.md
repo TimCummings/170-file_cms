@@ -651,5 +651,29 @@ We encourage you to explore this project further or create another of your own t
 
 ---
 
+#### I'm going to further extend user signups with the option to delete the current user. - 11/24/2018
+
+**Implementation**
+
+* Add a `Delete This User` button on the index page; only display if a user is signed in.
+  * When clicked, the user should be prompted for confirmation of a non-recoverable action.
+* Add a `/public/javascripts` directory.
+* Add JQuery to this directory.
+* Add an `application.js` file that will:
+  * Intercept the delete user action.
+  * Display a confirmation message that will proceed with user deletion only if confirmed.
+* Add a `post '/users/delete'` route that:
+  * verifies the user is signed in
+  * signs the user out
+  * deletes the user
+  * sets an appropriate session message
+  * redirects to index
+
+This is a lot of changes - I am breaking this into two separate commits:
+1. Get the feature working without javascript and confirmation message.
+2. Add javascript and the confirmation message.
+
+---
+
 Add the ability to upload images to the CMS (which could be referenced within markdown files).
 Modify the CMS so that each version of a document is preserved as changes are made to it.

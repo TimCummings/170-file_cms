@@ -420,4 +420,22 @@ class CMSTest < Minitest::Test
 
     delete_user('temp_user')
   end
+
+  def test_delete_user
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+
+    assert_equal 302, last_response.status
+    assert_equal 'temp_user', session['user']
+
+    post '/users/delete'
+
+    assert_equal 302, last_response.status
+    assert_nil session['user']
+    assert_equal 'User temp_user has been deleted.', session['message']
+
+    post '/users/signin', username: 'temp_user', password: 'temppass'
+
+    assert_equal 401, last_response.status
+    assert_includes last_response.body, 'Invalid Credentials'
+  end
 end

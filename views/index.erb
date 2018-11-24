@@ -27,6 +27,10 @@
     <em>Signed in as <%= session['user'] %>.</em>
     <button type="submit">Sign Out</button>
   </form>
+
+  <form method="post" action="/users/delete">
+    <button type="submit">Delete This User</button>
+  </form>
 <% else %>
   <form method="get" action="/users/signin">
     <button type="submit">Sign In</button>

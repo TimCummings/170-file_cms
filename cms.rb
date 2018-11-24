@@ -166,6 +166,16 @@ post '/users/signout' do
   redirect '/'
 end
 
+# delete the current user
+post '/users/delete' do
+  redirect_unless_authorized
+
+  current_user = session.delete('user')
+  delete_user current_user
+  session['message'] = "User #{current_user} has been deleted."
+  redirect '/'
+end
+
 # render new file form
 get '/new' do
   redirect_unless_authorized
