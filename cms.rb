@@ -30,9 +30,17 @@ def build_path(path_name)
   end
 end
 
+def config_path
+  build_path 'config'
+end
+
+def data_path
+  build_path 'data'
+end
+
 def set_file_info
   @file_name = params['file_name']
-  @file_path = File.join(build_path('data'), @file_name)
+  @file_path = File.join(data_path, @file_name)
 end
 
 def load_content(file_path)
@@ -65,14 +73,14 @@ end
 
 # read list of users from config file
 def all_users
-  Psych.load_file(File.join(build_path('config'), 'users.yml'))
+  Psych.load_file(File.join(config_path, 'users.yml'))
 end
 
 def add_user(username, digest)
   users = all_users
   users[username] = digest
 
-  File.open(File.join(build_path('config'), 'users.yml'), 'w') do |file|
+  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
     file.write Psych.dump(users)
   end
 end
@@ -81,7 +89,7 @@ def delete_user(username)
   users = all_users
   users.delete username
 
-  File.open(File.join(build_path('config'), 'users.yml'), 'w') do |file|
+  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
     file.write Psych.dump(users)
   end
 end
@@ -118,7 +126,7 @@ end
 
 # index: view a list of files
 get '/' do
-  pattern = File.join(build_path('data'), '*')
+  pattern = File.join(data_path, '*')
   @files = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :index
 end
@@ -216,10 +224,10 @@ post '/:file_name/duplicate' do
   redirect_unless_authorized
 
   original_name = params['file_name']
-  content = File.read(File.join(build_path('data'), original_name))
+  content = File.read(File.join(data_path, original_name))
 
   @file_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
-  @file_path = File.join(build_path('data'), @file_name)
+  @file_path = File.join(data_path, @file_name)
 
   File.open(@file_path, 'w') { |file| file.write(content) }
 

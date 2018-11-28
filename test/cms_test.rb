@@ -18,15 +18,15 @@ class CMSTest < Minitest::Test
   end
 
   def setup
-    FileUtils.mkdir_p build_path('data')
+    FileUtils.mkdir_p data_path
   end
 
   def teardown
-    FileUtils.rm_rf build_path('data')
+    FileUtils.rm_rf data_path
   end
 
   def create_document(file_name, content = '')
-    file_path = File.join(build_path('data'), file_name)
+    file_path = File.join(data_path, file_name)
     File.open(file_path, 'w') { |file| file.write(content) }
   end
 
