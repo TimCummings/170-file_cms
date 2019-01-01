@@ -1,0 +1,15 @@
+<!-- images.erb -->
+<ul>
+  <% @images.sort.each do |image| %>
+    <span><a href="/images/<%= image %>"><%= image %></a></span>
+    <form class="button" method="post" action="/images/<%= image %>/delete">
+    <button type="submit">Delete</button>
+    </form>
+  <% end %>
+</ul>
+
+<form method="post" action="/images" enctype="multipart/form-data">
+  <input type="file" name="image_upload" id="image_upload">
+  <br /><br />
+  <button type="submit">Upload</button>
+</form>

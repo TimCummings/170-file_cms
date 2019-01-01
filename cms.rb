@@ -38,6 +38,10 @@ def data_path
   build_path 'data'
 end
 
+def images_path
+  build_path 'public/images'
+end
+
 def set_file_info
   @file_name = params['file_name']
   @file_path = File.join(data_path, @file_name)
@@ -68,6 +72,20 @@ def error_for_file_name(file_name)
     'A valid file extension is required (e.g. .txt).'
   elsif !EXT_TYPE.key?(file_extension)
     "#{file_extension} extension is not currently supported."
+  end
+end
+
+def error_for_image(image)
+  return 'Please select an image to upload.' if image.nil?
+
+  pattern = File.join(images_path, '*')
+  @images = Dir.glob(pattern).map { |path| File.basename(path) }
+  image_name = image[:filename].strip
+
+  if image_name.empty?
+    'An image name is required.'
+  elsif @images.index(image_name)
+    "#{image_name} already exists."
   end
 end
 
@@ -182,6 +200,55 @@ post '/users/delete' do
   delete_user current_user
   session['message'] = "User #{current_user} has been deleted."
   redirect '/'
+end
+
+# view a list of images
+get '/images' do
+  pattern = File.join(images_path, '*')
+  @images = Dir.glob(pattern).map { |path| File.basename(path) }
+  erb :images
+end
+
+# upload a new image
+post '/images' do
+  redirect_unless_authorized
+
+  pattern = File.join(images_path, '*')
+  @images = Dir.glob(pattern).map { |path| File.basename(path) }
+  @image = params['image_upload']
+
+  error = error_for_image(@image)
+  if error
+    session['message'] = error
+    status 422
+    erb :images
+  else
+    File.open(File.join(images_path, @image[:filename]), 'wb') do |file|
+      file.write File.read(params['image_upload'][:tempfile])
+    end
+    session['message'] = "#{@image[:filename]} was uploaded."
+    redirect '/images'
+  end
+end
+
+# view an image
+get '/images/:image_name' do
+  @image_name = params['image_name']
+  @image_path = File.join(images_path, @image_name)
+
+  erb :image
+end
+
+# delete an image
+post '/images/:image_name/delete' do
+  redirect_unless_authorized
+
+  @image_name = params['image_name']
+  @image_path = File.join(images_path, @image_name)
+
+  FileUtils.rm @image_path
+  session['message'] = "#{@image_name} was deleted."
+  redirect '/images'
 end
 
 # render new file form

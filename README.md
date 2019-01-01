@@ -675,5 +675,19 @@ This is a lot of changes - I am breaking this into two separate commits:
 
 ---
 
-Add the ability to upload images to the CMS (which could be referenced within markdown files).
+#### Add the ability to upload images to the CMS (which could be referenced within markdown files). - 11/25/2018
+
+**Implementation**
+
+* Create an `images.erb` view that functions similarly to index but with images instead of files:
+  * List current images.
+  * Provide a delete button next to each image.
+  * Provide a form to upload a new image.
+* Create a `get '/images'` route to display the images view.
+* Create a `post '/images'` route to save an uploaded image.
+* Create a `get '/images/:image_name'` route to display a specific image.
+* Create a `post '/images/:image_name/delete'` route to delete a specific image.
+
+---
+
 Modify the CMS so that each version of a document is preserved as changes are made to it.

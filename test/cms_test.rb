@@ -19,10 +19,12 @@ class CMSTest < Minitest::Test
 
   def setup
     FileUtils.mkdir_p data_path
+    FileUtils.mkdir_p images_path
   end
 
   def teardown
     FileUtils.rm_rf data_path
+    FileUtils.rm_rf images_path
   end
 
   def create_document(file_name, content = '')
@@ -437,5 +439,67 @@ class CMSTest < Minitest::Test
 
     assert_equal 401, last_response.status
     assert_includes last_response.body, 'Invalid Credentials'
+  end
+
+  def test_user_upload_image
+    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+
+    assert_equal 302, last_response.status
+    assert_equal 'test_image.jpg was uploaded.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'test_image.jpg</a>'
+  end
+
+  def test_guest_upload_image
+    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }
+
+    assert_equal 302, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
+  end
+
+  def test_user_delete_image
+    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+
+    assert_equal 302, last_response.status
+    assert_equal 'test_image.jpg was uploaded.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'test_image.jpg</a>'
+
+    post '/images/test_image.jpg/delete', {}, admin_session
+    assert_equal 302, last_response.status
+    assert_equal 'test_image.jpg was deleted.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    refute_includes last_response.body, 'test_image.jpg</a>'
+  end
+
+  def test_guest_delete_image
+    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+
+    assert_equal 302, last_response.status
+    assert_equal 'test_image.jpg was uploaded.', session['message']
+
+    get last_response['Location']
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'test_image.jpg</a>'
+
+    post '/users/signout'
+
+    assert_equal 302, last_response.status
+    assert_equal 'You have been signed out.', session['message']
+
+    post '/images/test_image.jpg/delete'
+
+    assert_equal 302, last_response.status
+    assert_equal 'You must be signed in to do that.', session['message']
   end
 end
