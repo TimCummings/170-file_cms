@@ -690,4 +690,37 @@ This is a lot of changes - I am breaking this into two separate commits:
 
 ---
 
-Modify the CMS so that each version of a document is preserved as changes are made to it.
+#### Modify the CMS so that each version of a document is preserved as changes are made to it. - 1/2/2019
+
+**Implementation**
+
+Initial, unsophisticated approach: instead of a `data` directory of files, implement files as directories within `data`; a directory's name will be the `file_name` and it will contain all of its versions as files. Due to the fundamental shift of this change, implement it in phases.
+
+This approach will probably be inefficient and can be improved in the future, first with a `metadata` file (probably YAML) in each file's directory, then with a class based approach (e.g. a `CMSFile` class and a `CMSVersion` class, or something similar.)
+
+##### #Phase 1
+
+Don't worry about versions yet; convert app from files in `data` directory to directories in `data` directory containing a single version file, while preserving all existing functionality.
+
+* refactor new file route (`post '/create'`):
+  * create a directory with `@file_name` instead of a file
+* refactor view file route (`get '/:file_name'`):
+  * find the most recent version (highest version number) by:
+    * listing all files in the `@file_name` directory
+    * convertion the basenames to integers
+    * taking the max
+  * if max is `nil`, file is new and has no versions; display with empty content
+* refactor duplicate file route (`post '/:file_name/duplicate'`):
+  * create a new directory with the existing name change procedure
+  * copy the most recent version file as the only version file in the duplicated directory
+* refactor edit file form route (`get '/:file_name/edit'`):
+  * in the `textarea` for editing, display the contents of the most recent version file
+* refactor edit file route (`post '/:file_name'`):
+  * save changes (if there are any) as a new version, incrementing the version number
+* refactor delete file route (`post '/:file_name/delete'`):
+  * remove the file's directory and all version files contained within it
+
+##### Phase 2
+
+Implement versions.
+

@@ -48,13 +48,30 @@ def set_file_info
 end
 
 def load_content(file_path)
-  content = File.read file_path
-  headers['Content-Type'] = EXT_TYPE[File.extname(file_path)] || 'text/plain'
+  content =
+    if File.file?(latest_version(file_path))
+      File.read latest_version(file_path)
+    else
+      ''
+    end
+
+  headers['Content-Type'] = EXT_TYPE[File.extname(@file_path)] || 'text/plain'
 
   case File.extname(file_path)
   when '.md' then render_markdown(content)
   else content
   end
+end
+
+# return the path to the most recent version of the specified file
+def latest_version(file_path)
+  File.join file_path, max_version_number(file_path).to_s
+end
+
+# return a file's highest (most recent) version number
+def max_version_number(file_path)
+  pattern = File.join(file_path, '*')
+  Dir.glob(pattern).map { |path| File.basename(path).to_i }.max || 0
 end
 
 def render_markdown(text)
@@ -269,7 +286,8 @@ post '/create' do
     session['message'] = error
     erb :new
   else
-    FileUtils.touch @file_path
+    FileUtils.mkdir @file_path
+    FileUtils.touch File.join(@file_path, '1')
     session['message'] = "#{@file_name} was created."
     redirect '/'
   end
@@ -278,7 +296,8 @@ end
 # view a file by name
 get '/:file_name' do
   set_file_info
-  if File.file? @file_path
+
+  if File.directory? @file_path
     load_content @file_path
   else
     session['message'] = "#{@file_name} does not exist."
@@ -291,12 +310,15 @@ post '/:file_name/duplicate' do
   redirect_unless_authorized
 
   original_name = params['file_name']
-  content = File.read(File.join(data_path, original_name))
+  original_path = File.join(data_path, original_name)
+  content = File.read(latest_version(original_path))
 
   @file_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
   @file_path = File.join(data_path, @file_name)
 
-  File.open(@file_path, 'w') { |file| file.write(content) }
+  FileUtils.mkdir @file_path
+  initial_version = File.join(@file_path, '1')
+  File.open(initial_version, 'w') { |file| file.write(content) }
 
   session['message'] = "Duplicated #{original_name} as #{@file_name}."
   redirect '/'
@@ -307,8 +329,8 @@ get '/:file_name/edit' do
   redirect_unless_authorized
 
   set_file_info
-  if File.file? @file_path
-    @content = File.read @file_path
+  if File.directory? @file_path
+    @content = File.read(latest_version(@file_path))
     erb :edit
   else
     session['message'] = "#{@file_name} does not exist."
@@ -323,8 +345,11 @@ post '/:file_name' do
   set_file_info
   @content = params['content']
 
-  if File.file? @file_path
-    File.write @file_path, @content
+  if File.directory? @file_path
+    new_version_number = max_version_number(@file_path) + 1
+    new_version_path = File.join(@file_path, new_version_number.to_s)
+
+    File.write new_version_path, @content
     session['message'] = "#{@file_name} has been updated."
   else
     session['message'] = "#{@file_name} does not exist."
@@ -339,8 +364,7 @@ post '/:file_name/delete' do
 
   set_file_info
 
-  FileUtils.rm @file_path
+  FileUtils.rm_r @file_path
   session['message'] = "#{@file_name} was deleted."
   redirect '/'
 end
-

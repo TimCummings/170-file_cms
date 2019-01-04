@@ -29,7 +29,10 @@ class CMSTest < Minitest::Test
 
   def create_document(file_name, content = '')
     file_path = File.join(data_path, file_name)
-    File.open(file_path, 'w') { |file| file.write(content) }
+    FileUtils.mkdir file_path
+
+    initial_version = File.join(file_path, '1')
+    File.open(initial_version, 'w') { |file| file.write(content) }
   end
 
   def session
