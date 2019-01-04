@@ -3,15 +3,19 @@
   <% @files.sort.each do |file| %>
     <li>
       <span><a href="/<%= file %>"><%= file %></a></span>
-      <span><a href="<%= file %>/edit">Edit</a></span>
+      <span>
+        <form class="button" method="get" action="<%= file %>/edit">
+          <button type="submit">Edit</button>
+        </form>
+      </span>
       <span>
         <form class="button" method="post" action="/<%= file %>/duplicate">
-          <button type="submit">duplicate</button>
+          <button type="submit">Duplicate</button>
         </form>
       </span>
       <span>
         <form class="button" method="post" action="/<%= file %>/delete">
-          <button type="submit">delete</button>
+          <button type="submit">Delete</button>
         </form>
       </span>
     </li>
