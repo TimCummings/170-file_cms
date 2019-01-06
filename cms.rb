@@ -18,6 +18,8 @@ EXT_TYPE = {
   '.txt' => 'text/plain'
 }
 
+private
+
 def root
   File.expand_path('..', __FILE__)
 end
@@ -29,6 +31,8 @@ def build_path(path_name)
     File.join(root, path_name)
   end
 end
+
+public
 
 def config_path
   build_path 'config'
@@ -63,15 +67,22 @@ def load_content(file_path)
   end
 end
 
+# return a sorted (desc) list of version numbers for the specified file
+def versions_list(file_path)
+  versions_pattern = File.join(file_path, '*')
+  versions_list = Dir.glob(versions_pattern)
+  versions_list.map! { |path| File.basename(path).to_i }
+  versions_list.sort { |a, b| b <=> a }
+end
+
 # return the path to the most recent version of the specified file
 def latest_version(file_path)
-  File.join file_path, max_version_number(file_path).to_s
+  File.join(file_path, max_version_number(file_path).to_s)
 end
 
 # return a file's highest (most recent) version number
 def max_version_number(file_path)
-  pattern = File.join(file_path, '*')
-  Dir.glob(pattern).map { |path| File.basename(path).to_i }.max || 0
+  versions_list(file_path).max || 0
 end
 
 def render_markdown(text)
@@ -83,8 +94,13 @@ def error_for_file_name(file_name)
   file_name = file_name.strip
   file_extension = File.extname(file_name)
 
+  pattern = File.join(data_path, '*')
+  files = Dir.glob(pattern).map { |path| File.basename(path) }
+
   if file_name.empty?
     'A name is required.'
+  elsif files.include? file_name
+    "#{file_name} already exists."
   elsif file_extension.empty?
     'A valid file extension is required (e.g. .txt).'
   elsif !EXT_TYPE.key?(file_extension)
@@ -367,4 +383,28 @@ post '/:file_name/delete' do
   FileUtils.rm_r @file_path
   session['message'] = "#{@file_name} was deleted."
   redirect '/'
+end
+
+get '/:file_name/versions' do
+  set_file_info
+  erb :versions
+end
+
+get '/:file_name/:version' do
+  set_file_info
+  @version = params['version']
+  version_path = File.join(@file_path, @version)
+
+  if File.file? version_path
+    content = File.read(version_path)
+    headers['Content-Type'] = EXT_TYPE[File.extname(@file_path)] || 'text/plain'
+
+    case File.extname(@file_path)
+    when '.md' then render_markdown(content)
+    else content
+    end
+  else
+    session['message'] = "Version #{@version} of #{@file_name} does not exist."
+    redirect '/'
+  end
 end

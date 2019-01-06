@@ -227,6 +227,15 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, 'A name is required.'
   end
 
+  def test_creating_a_duplicate_file
+    post '/create', { file_name: 'scratch.txt' }, admin_session
+
+    post '/create', { file_name: 'scratch.txt' }, admin_session
+
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, 'scratch.txt already exists.'
+  end
+
   def test_creating_a_file_without_an_extension
     post '/create', { file_name: 'scratch' }, admin_session
 
@@ -280,6 +289,39 @@ class CMSTest < Minitest::Test
     assert_equal 'text/html;charset=utf-8', last_response['Content-Type']
     assert_includes last_response.body, 'new_file.txt</a>'
     assert_includes last_response.body, 'action="/new_file.txt/delete"'
+  end
+
+  def test_versions_view
+    create_document 'new_file.txt'
+    post '/new_file.txt', { content: 'Hello World!' }, admin_session
+
+    get '/new_file.txt/versions'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, '<li><a href="/new_file.txt/2">2</a></li>'
+    assert_includes last_response.body, '<li><a href="/new_file.txt/1">1</a></li>'
+  end
+
+  def test_viewing_old_version
+    create_document 'new_file.txt'
+    post '/new_file.txt', { content: 'Hello World!' }, admin_session
+    post '/new_file.txt', { content: 'Goodbye.' }, admin_session
+
+    get '/new_file.txt/2'
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, 'Hello World!'
+    refute_includes last_response.body, 'Goodbye.'
+  end
+
+  def test_viewing_nonexistant_version
+    create_document 'new_file.txt'
+    post 'new_file.txt', { content: 'Hello World!' }, admin_session
+
+    get '/new_file.txt/3'
+
+    assert_equal 302, last_response.status
+    assert_equal 'Version 3 of new_file.txt does not exist.', session['message']
   end
 
   def test_sign_in_button_is_present_on_index

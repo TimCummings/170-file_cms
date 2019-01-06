@@ -1,0 +1,7 @@
+<!-- versions.erb -->
+<ul>
+  <lh><strong><%= @file_name %></strong></lh>
+  <% versions_list(@file_path).each do |version| %>
+    <li><a href="/<%= @file_name %>/<%= version %>"><%= version %></a></li>
+  <% end %>
+</ul>

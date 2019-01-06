@@ -696,14 +696,15 @@ This is a lot of changes - I am breaking this into two separate commits:
 
 Initial, unsophisticated approach: instead of a `data` directory of files, implement files as directories within `data`; a directory's name will be the `file_name` and it will contain all of its versions as files. Due to the fundamental shift of this change, implement it in phases.
 
-This approach will probably be inefficient and can be improved in the future, first with a `metadata` file (probably YAML) in each file's directory, then with a class based approach (e.g. a `CMSFile` class and a `CMSVersion` class, or something similar.)
+This approach will probably be inefficient and can be improved in the future, first possibly with a `metadata` file (probably YAML) in each file's directory, then with a class based approach (e.g. a `CMSFile` class and a `CMSVersion` class, or something similar.)
 
-##### #Phase 1
+##### Phase 1
 
-Don't worry about versions yet; convert app from files in `data` directory to directories in `data` directory containing a single version file, while preserving all existing functionality.
+Don't worry about accessing versions yet; convert app from files in `/data` to directories in `/data` containing version files, while preserving all existing functionality.
 
 * refactor new file route (`post '/create'`):
   * create a directory with `@file_name` instead of a file
+  * in the `@file_name` directory, create a file named `1` (the version number)
 * refactor view file route (`get '/:file_name'`):
   * find the most recent version (highest version number) by:
     * listing all files in the `@file_name` directory
@@ -722,5 +723,8 @@ Don't worry about versions yet; convert app from files in `data` directory to di
 
 ##### Phase 2
 
-Implement versions.
+Add an interface (view and route) to see and access versions.
 
+* create a `versions.erb` view that lists a file's name with a list of links to all versions of that file
+* create a `get '/:file_name/versions'` route that generates a list of all versions of a file and renders `versions.erb`
+* create a `get '/:file_name/:version'` route that loads and displays the content of the specified version file (if it exists)
