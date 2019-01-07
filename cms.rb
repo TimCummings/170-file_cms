@@ -46,43 +46,43 @@ def images_path
   build_path 'public/images'
 end
 
-def set_file_info
-  @file_name = params['file_name']
-  @file_path = File.join(data_path, @file_name)
+def set_document_info
+  @document_name = params['document_name']
+  @document_path = File.join(data_path, @document_name)
 end
 
-def load_content(file_path)
+def load_content(document_path)
   content =
-    if File.file?(latest_version(file_path))
-      File.read latest_version(file_path)
+    if File.file?(latest_version(document_path))
+      File.read latest_version(document_path)
     else
       ''
     end
 
-  headers['Content-Type'] = EXT_TYPE[File.extname(@file_path)] || 'text/plain'
+  headers['Content-Type'] = EXT_TYPE[File.extname(@document_path)] || 'text/plain'
 
-  case File.extname(file_path)
+  case File.extname(document_path)
   when '.md' then render_markdown(content)
   else content
   end
 end
 
-# return a sorted (desc) list of version numbers for the specified file
-def versions_list(file_path)
-  versions_pattern = File.join(file_path, '*')
+# return a sorted (desc) list of version numbers for the specified document
+def versions_list(document_path)
+  versions_pattern = File.join(document_path, '*')
   versions_list = Dir.glob(versions_pattern)
   versions_list.map! { |path| File.basename(path).to_i }
   versions_list.sort { |a, b| b <=> a }
 end
 
-# return the path to the most recent version of the specified file
-def latest_version(file_path)
-  File.join(file_path, max_version_number(file_path).to_s)
+# return the path to the most recent version of the specified document
+def latest_version(document_path)
+  File.join(document_path, max_version_number(document_path).to_s)
 end
 
-# return a file's highest (most recent) version number
-def max_version_number(file_path)
-  versions_list(file_path).max || 0
+# return a document's highest (most recent) version number
+def max_version_number(document_path)
+  versions_list(document_path).max || 0
 end
 
 def render_markdown(text)
@@ -90,21 +90,21 @@ def render_markdown(text)
   markdown.render(text)
 end
 
-def error_for_file_name(file_name)
-  file_name = file_name.strip
-  file_extension = File.extname(file_name)
+def error_for_document_name(document_name)
+  document_name = document_name.strip
+  document_extension = File.extname(document_name)
 
   pattern = File.join(data_path, '*')
-  files = Dir.glob(pattern).map { |path| File.basename(path) }
+  documents = Dir.glob(pattern).map { |path| File.basename(path) }
 
-  if file_name.empty?
+  if document_name.empty?
     'A name is required.'
-  elsif files.include? file_name
-    "#{file_name} already exists."
-  elsif file_extension.empty?
-    'A valid file extension is required (e.g. .txt).'
-  elsif !EXT_TYPE.key?(file_extension)
-    "#{file_extension} extension is not currently supported."
+  elsif documents.include? document_name
+    "#{document_name} already exists."
+  elsif document_extension.empty?
+    'A valid document extension is required (e.g. .txt).'
+  elsif !EXT_TYPE.key?(document_extension)
+    "#{document_extension} extension is not currently supported."
   end
 end
 
@@ -175,10 +175,10 @@ def error_for_new_user(new_username, new_password, confirm_new_password)
   end
 end
 
-# index: view a list of files
+# index: view a list of documents
 get '/' do
   pattern = File.join(data_path, '*')
-  @files = Dir.glob(pattern).map { |path| File.basename(path) }
+  @documents = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :index
 end
 
@@ -284,127 +284,127 @@ post '/images/:image_name/delete' do
   redirect '/images'
 end
 
-# render new file form
+# render new document form
 get '/new' do
   redirect_unless_authorized
   erb :new
 end
 
-# create a new file
+# create a new document
 post '/create' do
   redirect_unless_authorized
 
-  set_file_info
+  set_document_info
 
-  error = error_for_file_name(@file_name)
+  error = error_for_document_name(@document_name)
   if error
     status 422
     session['message'] = error
     erb :new
   else
-    FileUtils.mkdir @file_path
-    FileUtils.touch File.join(@file_path, '1')
-    session['message'] = "#{@file_name} was created."
+    FileUtils.mkdir @document_path
+    FileUtils.touch File.join(@document_path, '1')
+    session['message'] = "#{@document_name} was created."
     redirect '/'
   end
 end
 
-# view a file by name
-get '/:file_name' do
-  set_file_info
+# view a document by name
+get '/:document_name' do
+  set_document_info
 
-  if File.directory? @file_path
-    load_content @file_path
+  if File.directory? @document_path
+    load_content @document_path
   else
-    session['message'] = "#{@file_name} does not exist."
+    session['message'] = "#{@document_name} does not exist."
     redirect '/'
   end
 end
 
-# duplicate a file by name
-post '/:file_name/duplicate' do
+# duplicate a document by name
+post '/:document_name/duplicate' do
   redirect_unless_authorized
 
-  original_name = params['file_name']
+  original_name = params['document_name']
   original_path = File.join(data_path, original_name)
   content = File.read(latest_version(original_path))
 
-  @file_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
-  @file_path = File.join(data_path, @file_name)
+  @document_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
+  @document_path = File.join(data_path, @document_name)
 
-  FileUtils.mkdir @file_path
-  initial_version = File.join(@file_path, '1')
+  FileUtils.mkdir @document_path
+  initial_version = File.join(@document_path, '1')
   File.open(initial_version, 'w') { |file| file.write(content) }
 
-  session['message'] = "Duplicated #{original_name} as #{@file_name}."
+  session['message'] = "Duplicated #{original_name} as #{@document_name}."
   redirect '/'
 end
 
-# render edit file form
-get '/:file_name/edit' do
+# render edit document form
+get '/:document_name/edit' do
   redirect_unless_authorized
 
-  set_file_info
-  if File.directory? @file_path
-    @content = File.read(latest_version(@file_path))
+  set_document_info
+  if File.directory? @document_path
+    @content = File.read(latest_version(@document_path))
     erb :edit
   else
-    session['message'] = "#{@file_name} does not exist."
+    session['message'] = "#{@document_name} does not exist."
     redirect '/'
   end
 end
 
-# edit a file by name
-post '/:file_name' do
+# edit a document by name
+post '/:document_name' do
   redirect_unless_authorized
 
-  set_file_info
+  set_document_info
   @content = params['content']
 
-  if File.directory? @file_path
-    new_version_number = max_version_number(@file_path) + 1
-    new_version_path = File.join(@file_path, new_version_number.to_s)
+  if File.directory? @document_path
+    new_version_number = max_version_number(@document_path) + 1
+    new_version_path = File.join(@document_path, new_version_number.to_s)
 
     File.write new_version_path, @content
-    session['message'] = "#{@file_name} has been updated."
+    session['message'] = "#{@document_name} has been updated."
   else
-    session['message'] = "#{@file_name} does not exist."
+    session['message'] = "#{@document_name} does not exist."
   end
 
   redirect '/'
 end
 
-# delete a file
-post '/:file_name/delete' do
+# delete a document
+post '/:document_name/delete' do
   redirect_unless_authorized
 
-  set_file_info
+  set_document_info
 
-  FileUtils.rm_r @file_path
-  session['message'] = "#{@file_name} was deleted."
+  FileUtils.rm_r @document_path
+  session['message'] = "#{@document_name} was deleted."
   redirect '/'
 end
 
-get '/:file_name/versions' do
-  set_file_info
+get '/:document_name/versions' do
+  set_document_info
   erb :versions
 end
 
-get '/:file_name/:version' do
-  set_file_info
+get '/:document_name/:version' do
+  set_document_info
   @version = params['version']
-  version_path = File.join(@file_path, @version)
+  version_path = File.join(@document_path, @version)
 
   if File.file? version_path
     content = File.read(version_path)
-    headers['Content-Type'] = EXT_TYPE[File.extname(@file_path)] || 'text/plain'
+    headers['Content-Type'] = EXT_TYPE[File.extname(@document_path)] || 'text/plain'
 
-    case File.extname(@file_path)
+    case File.extname(@document_path)
     when '.md' then render_markdown(content)
     else content
     end
   else
-    session['message'] = "Version #{@version} of #{@file_name} does not exist."
+    session['message'] = "Version #{@version} of #{@document_name} does not exist."
     redirect '/'
   end
 end

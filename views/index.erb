@@ -1,25 +1,25 @@
 <!-- index.erb -->
 <ul>
-  <% @files.sort.each do |file| %>
+  <% @documents.sort.each do |document| %>
     <li>
-      <span><a href="/<%= file %>"><%= file %></a></span>
+      <span><a href="/<%= document %>"><%= document %></a></span>
       <span>
-        <form class="button" method="get" action="<%= file %>/edit">
+        <form class="button" method="get" action="<%= document %>/edit">
           <button type="submit">Edit</button>
         </form>
       </span>
       <span>
-        <form class="button" method="post" action="/<%= file %>/duplicate">
+        <form class="button" method="post" action="/<%= document %>/duplicate">
           <button type="submit">Duplicate</button>
         </form>
       </span>
       <span>
-        <form class="button" method="post" action="/<%= file %>/delete">
+        <form class="button" method="post" action="/<%= document %>/delete">
           <button type="submit">Delete</button>
         </form>
       </span>
       <span>
-        <form class="button" method="get" action="/<%= file %>/versions">
+        <form class="button" method="get" action="/<%= document %>/versions">
           <button>Versions</button>
         </form>
       </span>
