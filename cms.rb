@@ -181,7 +181,7 @@ post '/create' do
     session['message'] = error
     erb :new
   else
-    save_document @document_path
+    save_document @document_path, params['content']
     session['message'] = "#{@document_name} was created."
     redirect '/'
   end
