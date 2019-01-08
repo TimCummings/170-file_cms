@@ -70,9 +70,7 @@ post '/users' do
 
   error = error_for_new_user(@new_username, params['new_password'], params['confirm_new_password'])
   if error
-    session['message'] = error
-    status 422
-    erb :signin
+    handle_error 422, error, :signin
   else
     digest = BCrypt::Password.create params['new_password']
     add_user @new_username, digest
@@ -89,14 +87,12 @@ end
 
 # attempt to sign in the user with provided credentials
 post '/users/signin' do
-  if authentic_user?(params['username'], params['password'])
+  unless authentic_user?(params['username'], params['password'])
+    handle_error 401, 'Invalid Credentials', :signin
+  else
     session['user'] = params['username']
     session['message'] = 'Welcome!'
     redirect '/'
-  else
-    session['message'] = 'Invalid Credentials'
-    status 401
-    erb :signin
   end
 end
 
@@ -130,9 +126,7 @@ post '/images' do
 
   error = error_for_image(@image)
   if error
-    session['message'] = error
-    status 422
-    erb :images
+    handle_error 422, error, :images
   else
     File.open(File.join(images_path, @image[:filename]), 'wb') do |file|
       file.write File.read(params['image_upload'][:tempfile])
@@ -177,9 +171,7 @@ post '/create' do
 
   error = error_for_document_name(@document_name)
   if error
-    status 422
-    session['message'] = error
-    erb :new
+    handle_error 422, error, :new
   else
     save_document @document_path, params['content']
     session['message'] = "#{@document_name} was created."
@@ -404,4 +396,10 @@ def redirect_unless_authorized
     session['message'] = 'You must be signed in to do that.'
     redirect '/'
   end
+end
+
+def handle_error(status_code, error_message, view_to_render)
+  status status_code
+  session['message'] = error_message
+  erb view_to_render
 end
