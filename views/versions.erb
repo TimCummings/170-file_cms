@@ -1,7 +1,7 @@
 <!-- versions.erb -->
 <ul>
   <lh><strong><%= @document_name %></strong></lh>
-  <% versions_list(@document_path).each do |version| %>
+  <% sorted_versions(@document_path).each do |version| %>
     <li><a href="/<%= @document_name %>/<%= version %>"><%= version %></a></li>
   <% end %>
 </ul>

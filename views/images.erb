@@ -1,6 +1,6 @@
 <!-- images.erb -->
 <ul>
-  <% @images.sort.each do |image| %>
+  <% images.sort.each do |image| %>
     <span><a href="/images/<%= image %>"><%= image %></a></span>
     <form class="button" method="post" action="/images/<%= image %>/delete">
     <button type="submit">Delete</button>

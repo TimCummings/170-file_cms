@@ -116,6 +116,17 @@ class CMSTest < Minitest::Test
     refute_includes last_response.body, 'about-copy.md</a>'
   end
 
+  def test_duplicating_already_duplicated_document
+    create_document 'about.md', '# About Ruby'
+
+    post '/about.md/duplicate', {}, admin_session
+
+    post '/about.md/duplicate'
+
+    assert_equal 302, last_response.status
+    assert_equal 'about-copy.md already exists.', session['message']
+  end
+
   def test_user_edit_form
     create_document 'about.md', '# About Ruby'
 

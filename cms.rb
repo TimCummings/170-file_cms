@@ -18,21 +18,9 @@ EXT_TYPE = {
   '.txt' => 'text/plain'
 }
 
-private
-
 def root
   File.expand_path('..', __FILE__)
 end
-
-def build_path(path_name)
-  if ENV['RACK_ENV'] == 'test'
-    File.join(root, 'test', path_name)
-  else
-    File.join(root, path_name)
-  end
-end
-
-public
 
 def config_path
   build_path 'config'
@@ -46,140 +34,34 @@ def images_path
   build_path 'public/images'
 end
 
-def set_document_info
-  @document_name = params['document_name']
-  @document_path = File.join(data_path, @document_name)
-end
-
-def load_content(document_path)
-  content =
-    if File.file?(latest_version(document_path))
-      File.read latest_version(document_path)
-    else
-      ''
-    end
-
-  headers['Content-Type'] = EXT_TYPE[File.extname(@document_path)] || 'text/plain'
-
-  case File.extname(document_path)
-  when '.md' then render_markdown(content)
-  else content
-  end
-end
-
-# return a sorted (desc) list of version numbers for the specified document
-def versions_list(document_path)
-  versions_pattern = File.join(document_path, '*')
-  versions_list = Dir.glob(versions_pattern)
-  versions_list.map! { |path| File.basename(path).to_i }
-  versions_list.sort { |a, b| b <=> a }
-end
-
-# return the path to the most recent version of the specified document
-def latest_version(document_path)
-  File.join(document_path, max_version_number(document_path).to_s)
-end
-
-# return a document's highest (most recent) version number
-def max_version_number(document_path)
-  versions_list(document_path).max || 0
-end
-
-def render_markdown(text)
-  markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
-  markdown.render(text)
-end
-
-def error_for_document_name(document_name)
-  document_name = document_name.strip
-  document_extension = File.extname(document_name)
-
+def documents
   pattern = File.join(data_path, '*')
-  documents = Dir.glob(pattern).map { |path| File.basename(path) }
-
-  if document_name.empty?
-    'A name is required.'
-  elsif documents.include? document_name
-    "#{document_name} already exists."
-  elsif document_extension.empty?
-    'A valid document extension is required (e.g. .txt).'
-  elsif !EXT_TYPE.key?(document_extension)
-    "#{document_extension} extension is not currently supported."
-  end
+  Dir.glob(pattern).map { |path| File.basename(path) }
 end
 
-def error_for_image(image)
-  return 'Please select an image to upload.' if image.nil?
-
+def images
   pattern = File.join(images_path, '*')
-  @images = Dir.glob(pattern).map { |path| File.basename(path) }
-  image_name = image[:filename].strip
-
-  if image_name.empty?
-    'An image name is required.'
-  elsif @images.index(image_name)
-    "#{image_name} already exists."
-  end
+  Dir.glob(pattern).map { |path| File.basename(path) }
 end
 
-# read list of users from config file
+def versions(document_path)
+  pattern = File.join(document_path, '*')
+  Dir.glob(pattern).map { |path| File.basename(path) }
+end
+
 def all_users
   Psych.load_file(File.join(config_path, 'users.yml'))
 end
 
-def add_user(username, digest)
-  users = all_users
-  users[username] = digest
-
-  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
-    file.write Psych.dump(users)
+helpers do
+  def render_markdown(text)
+    markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML)
+    markdown.render(text)
   end
-end
 
-def delete_user(username)
-  users = all_users
-  users.delete username
-
-  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
-    file.write Psych.dump(users)
+  def sorted_versions(document_path)
+    versions(document_path).sort { |a, b| b.to_i <=> a.to_i }
   end
-end
-
-def authentic_user?(username, password)
-  all_users.key?(username) && BCrypt::Password.new(all_users[username]) == password
-end
-
-# true if user is signed in
-def user?
-  session.key? 'user'
-end
-
-def redirect_unless_authorized
-  unless user?
-    session['message'] = 'You must be signed in to do that.'
-    redirect '/'
-  end
-end
-
-def error_for_new_user(new_username, new_password, confirm_new_password)
-  if new_username.nil? || new_username.strip.empty?
-    'A new username is required.'
-  elsif new_password.nil? || new_password.strip.empty?
-    'A new password is required.'
-  elsif confirm_new_password.nil? || confirm_new_password.strip.empty?
-    'New password must be confirmed.'
-  elsif new_password != confirm_new_password
-    "Passwords don't match."
-  elsif all_users.key? new_username
-    "User #{new_username} already exists."
-  end
-end
-
-# index: view a list of documents
-get '/' do
-  pattern = File.join(data_path, '*')
-  @documents = Dir.glob(pattern).map { |path| File.basename(path) }
-  erb :index
 end
 
 # create a new user
@@ -237,8 +119,6 @@ end
 
 # view a list of images
 get '/images' do
-  pattern = File.join(images_path, '*')
-  @images = Dir.glob(pattern).map { |path| File.basename(path) }
   erb :images
 end
 
@@ -246,8 +126,6 @@ end
 post '/images' do
   redirect_unless_authorized
 
-  pattern = File.join(images_path, '*')
-  @images = Dir.glob(pattern).map { |path| File.basename(path) }
   @image = params['image_upload']
 
   error = error_for_image(@image)
@@ -266,9 +144,7 @@ end
 
 # view an image
 get '/images/:image_name' do
-  @image_name = params['image_name']
-  @image_path = File.join(images_path, @image_name)
-
+  set_image_info
   erb :image
 end
 
@@ -276,12 +152,15 @@ end
 post '/images/:image_name/delete' do
   redirect_unless_authorized
 
-  @image_name = params['image_name']
-  @image_path = File.join(images_path, @image_name)
-
+  set_image_info
   FileUtils.rm @image_path
   session['message'] = "#{@image_name} was deleted."
   redirect '/images'
+end
+
+# index: view a list of documents
+get '/' do
+  erb :index
 end
 
 # render new document form
@@ -302,8 +181,7 @@ post '/create' do
     session['message'] = error
     erb :new
   else
-    FileUtils.mkdir @document_path
-    FileUtils.touch File.join(@document_path, '1')
+    save_document @document_path
     session['message'] = "#{@document_name} was created."
     redirect '/'
   end
@@ -313,8 +191,8 @@ end
 get '/:document_name' do
   set_document_info
 
-  if File.directory? @document_path
-    load_content @document_path
+  if document_exists? @document_path
+    render_content @document_path
   else
     session['message'] = "#{@document_name} does not exist."
     redirect '/'
@@ -325,18 +203,17 @@ end
 post '/:document_name/duplicate' do
   redirect_unless_authorized
 
-  original_name = params['document_name']
-  original_path = File.join(data_path, original_name)
-  content = File.read(latest_version(original_path))
+  set_document_info
+  copy_name = File.basename(@document_name, '.*') + '-copy' + File.extname(@document_name)
+  copy_path = File.join File.dirname(@document_path), copy_name
 
-  @document_name = File.basename(original_name, '.*') + '-copy' + File.extname(original_name)
-  @document_path = File.join(data_path, @document_name)
+  if document_exists?(copy_path)
+    session['message'] = "#{copy_name} already exists."
+  else
+    save_document copy_path, load_content(@document_path)
+    session['message'] = "Duplicated #{@document_name} as #{copy_name}."
+  end
 
-  FileUtils.mkdir @document_path
-  initial_version = File.join(@document_path, '1')
-  File.open(initial_version, 'w') { |file| file.write(content) }
-
-  session['message'] = "Duplicated #{original_name} as #{@document_name}."
   redirect '/'
 end
 
@@ -345,8 +222,8 @@ get '/:document_name/edit' do
   redirect_unless_authorized
 
   set_document_info
-  if File.directory? @document_path
-    @content = File.read(latest_version(@document_path))
+  if document_exists? @document_path
+    @content = load_content @document_path
     erb :edit
   else
     session['message'] = "#{@document_name} does not exist."
@@ -361,11 +238,8 @@ post '/:document_name' do
   set_document_info
   @content = params['content']
 
-  if File.directory? @document_path
-    new_version_number = max_version_number(@document_path) + 1
-    new_version_path = File.join(@document_path, new_version_number.to_s)
-
-    File.write new_version_path, @content
+  if document_exists? @document_path
+    save_document @document_path, @content
     session['message'] = "#{@document_name} has been updated."
   else
     session['message'] = "#{@document_name} does not exist."
@@ -379,32 +253,155 @@ post '/:document_name/delete' do
   redirect_unless_authorized
 
   set_document_info
-
   FileUtils.rm_r @document_path
   session['message'] = "#{@document_name} was deleted."
   redirect '/'
 end
 
+# view a list of document versions
 get '/:document_name/versions' do
   set_document_info
   erb :versions
 end
 
+# view a specific version of a document
 get '/:document_name/:version' do
   set_document_info
   @version = params['version']
-  version_path = File.join(@document_path, @version)
 
-  if File.file? version_path
-    content = File.read(version_path)
-    headers['Content-Type'] = EXT_TYPE[File.extname(@document_path)] || 'text/plain'
-
-    case File.extname(@document_path)
-    when '.md' then render_markdown(content)
-    else content
-    end
+  if document_exists? @document_path, @version
+    render_content @document_path, @version
   else
     session['message'] = "Version #{@version} of #{@document_name} does not exist."
+    redirect '/'
+  end
+end
+
+private
+
+def build_path(path_name)
+  if ENV['RACK_ENV'] == 'test'
+    File.join(root, 'test', path_name)
+  else
+    File.join(root, path_name)
+  end
+end
+
+def set_document_info
+  @document_name = params['document_name']
+  @document_path = File.join(data_path, @document_name)
+end
+
+def load_content(document_path, version=nil)
+  version ||= max_version_number(document_path)
+  File.read File.join(document_path, version.to_s)
+end
+
+def render_content(document_path, version=nil)
+  headers['Content-Type'] = EXT_TYPE[File.extname(document_path)] || 'text/plain'
+
+  case File.extname(document_path)
+  when '.md' then render_markdown load_content(document_path, version)
+  else load_content(document_path, version)
+  end
+end
+
+def error_for_document_name(name)
+  name = name.strip
+
+  if name.empty?
+    'A name is required.'
+  elsif documents.include? name
+    "#{name} already exists."
+  elsif File.extname(name).empty?
+    'A valid document extension is required (e.g. .txt).'
+  elsif !EXT_TYPE.key?(File.extname(name))
+    "#{File.extname(name)} extension is not currently supported."
+  end
+end
+
+def document_exists?(path, version=nil)
+  version ||= max_version_number(path).to_s
+  File.file? File.join(path, version)
+end
+
+def save_document(path, content='')
+  FileUtils.mkdir(path) unless document_exists?(path)
+  version = max_version_number(path) + 1
+  File.write File.join(path, version.to_s), content
+end
+
+# return the path to the most recent version of the specified document
+def latest_version(document_path)
+  File.join(document_path, max_version_number(document_path).to_s)
+end
+
+# return a document's highest (most recent) version number
+def max_version_number(document_path)
+  versions(document_path).map(&:to_i).max || 0
+end
+
+def set_image_info
+  @image_name = params['image_name']
+  @image_path = File.join(images_path, @image_name)
+end
+
+def error_for_image(image)
+  return 'Please select an image to upload.' if image.nil?
+
+  image_name = image[:filename].strip
+
+  if image_name.empty?
+    'An image name is required.'
+  elsif images.index(image_name)
+    "#{image_name} already exists."
+  end
+end
+
+def add_user(username, digest)
+  users = all_users
+  users[username] = digest
+
+  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
+    file.write Psych.dump(users)
+  end
+end
+
+def error_for_new_user(new_username, new_password, confirm_new_password)
+  if new_username.nil? || new_username.strip.empty?
+    'A new username is required.'
+  elsif new_password.nil? || new_password.strip.empty?
+    'A new password is required.'
+  elsif confirm_new_password.nil? || confirm_new_password.strip.empty?
+    'New password must be confirmed.'
+  elsif new_password != confirm_new_password
+    "Passwords don't match."
+  elsif all_users.key? new_username
+    "User #{new_username} already exists."
+  end
+end
+
+def delete_user(username)
+  users = all_users
+  users.delete username
+
+  File.open(File.join(config_path, 'users.yml'), 'w') do |file|
+    file.write Psych.dump(users)
+  end
+end
+
+def authentic_user?(username, password)
+  all_users.key?(username) && BCrypt::Password.new(all_users[username]) == password
+end
+
+# true if user is signed in
+def user?
+  session.key? 'user'
+end
+
+def redirect_unless_authorized
+  unless user?
+    session['message'] = 'You must be signed in to do that.'
     redirect '/'
   end
 end
