@@ -2,27 +2,19 @@
 <ul>
   <% Document.all.each do |document| %>
     <li>
-      <span><a href="/<%= document.name %>"><%= document.name %></a></span>
-      <span>
-        <form class="button" method="get" action="<%= document.name %>/edit">
-          <button type="submit">Edit</button>
-        </form>
-      </span>
-      <span>
-        <form class="button" method="post" action="/<%= document.name %>/duplicate">
-          <button type="submit">Duplicate</button>
-        </form>
-      </span>
-      <span>
-        <form class="button" method="post" action="/<%= document.name %>/delete">
-          <button type="submit">Delete</button>
-        </form>
-      </span>
-      <span>
-        <form class="button" method="get" action="/<%= document.name %>/versions">
-          <button>Versions</button>
-        </form>
-      </span>
+      <a href="/<%= document.name %>"><%= document.name %></a>
+      <form class="button" method="get" action="<%= document.name %>/edit">
+        <button type="submit">Edit</button>
+      </form>
+      <form class="button" method="post" action="/<%= document.name %>/duplicate">
+        <button type="submit">Duplicate</button>
+      </form>
+      <form class="button" method="post" action="/<%= document.name %>/delete">
+        <button type="submit">Delete</button>
+      </form>
+      <form class="button" method="get" action="/<%= document.name %>/versions">
+        <button>Versions</button>
+      </form>
     </li>
   <% end %>
 </ul>
