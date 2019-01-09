@@ -1,8 +1,8 @@
 <!-- images.erb -->
 <ul>
-  <% images.sort.each do |image| %>
-    <span><a href="/images/<%= image %>"><%= image %></a></span>
-    <form class="button" method="post" action="/images/<%= image %>/delete">
+  <% Image.all.sort.each do |image| %>
+    <span><a href="/images/<%= image.name %>"><%= image.name %></a></span>
+    <form class="button" method="post" action="/images/<%= image.name %>/delete">
     <button type="submit">Delete</button>
     </form>
   <% end %>

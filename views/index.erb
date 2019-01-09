@@ -1,25 +1,25 @@
 <!-- index.erb -->
 <ul>
-  <% documents.sort.each do |document| %>
+  <% Document.all.each do |document| %>
     <li>
-      <span><a href="/<%= document %>"><%= document %></a></span>
+      <span><a href="/<%= document.name %>"><%= document.name %></a></span>
       <span>
-        <form class="button" method="get" action="<%= document %>/edit">
+        <form class="button" method="get" action="<%= document.name %>/edit">
           <button type="submit">Edit</button>
         </form>
       </span>
       <span>
-        <form class="button" method="post" action="/<%= document %>/duplicate">
+        <form class="button" method="post" action="/<%= document.name %>/duplicate">
           <button type="submit">Duplicate</button>
         </form>
       </span>
       <span>
-        <form class="button" method="post" action="/<%= document %>/delete">
+        <form class="button" method="post" action="/<%= document.name %>/delete">
           <button type="submit">Delete</button>
         </form>
       </span>
       <span>
-        <form class="button" method="get" action="/<%= document %>/versions">
+        <form class="button" method="get" action="/<%= document.name %>/versions">
           <button>Versions</button>
         </form>
       </span>

@@ -1,8 +1,8 @@
 <!-- edit.erb -->
-<p>Edit content of <%= @document_name %>:</p>
+<p>Edit content of <%= @document.name %>:</p>
 
-<form method="post" action="/<%= @document_name %>">
-  <textarea name="content" cols="80" rows="20"><%= @content %></textarea>
+<form method="post" action="/<%= @document.name %>">
+  <textarea name="content" cols="80" rows="20"><%= @document.load %></textarea>
   <br />
   <button type="submit">Save Changes</button>
 </form>

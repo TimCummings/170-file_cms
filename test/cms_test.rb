@@ -18,17 +18,17 @@ class CMSTest < Minitest::Test
   end
 
   def setup
-    FileUtils.mkdir_p data_path
-    FileUtils.mkdir_p images_path
+    FileUtils.mkdir_p Document.path
+    FileUtils.mkdir_p Image.path
   end
 
   def teardown
-    FileUtils.rm_rf data_path
-    FileUtils.rm_rf images_path
+    FileUtils.rm_rf Document.path
+    FileUtils.rm_rf Image.path
   end
 
   def create_document(document_name, content = '')
-    document_path = File.join(data_path, document_name)
+    document_path = File.join(Document.path, document_name)
     FileUtils.mkdir document_path
 
     initial_version = File.join(document_path, '1')
@@ -277,7 +277,7 @@ class CMSTest < Minitest::Test
     post '/new_document.txt/delete', {}, admin_session
 
     assert_equal 302, last_response.status
-    assert_equal 'new_document.txt was deleted.', session['message']
+    assert_equal 'new_document.txt has been deleted.', session['message']
 
     get last_response['Location']
 
@@ -407,7 +407,7 @@ class CMSTest < Minitest::Test
   end
 
   def test_create_new_user
-    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_password: 'temppass'
 
     assert_equal 302, last_response.status
     assert_equal 'temp_user', session['user']
@@ -422,7 +422,7 @@ class CMSTest < Minitest::Test
     assert_equal 302, last_response.status
     assert_equal 'temp_user', session['user']
 
-    delete_user('temp_user')
+    User.delete!('temp_user')
   end
 
   def test_create_new_user_with_empty_name
@@ -454,14 +454,14 @@ class CMSTest < Minitest::Test
   end
 
   def test_create_new_user_with_mismatched_passwords
-    post '/users', new_username: 'buggy_user', new_password: 'match', confirm_new_password: 'notamatch'
+    post '/users', new_username: 'buggy_user', new_password: 'match', confirm_password: 'notamatch'
 
     assert_equal 422, last_response.status
     assert_includes last_response.body, "Passwords don't match."
   end
 
   def test_create_duplicate_user
-    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_password: 'temppass'
 
     assert_equal 302, last_response.status
     assert_equal 'temp_user', session['user']
@@ -471,16 +471,16 @@ class CMSTest < Minitest::Test
     assert_equal 302, last_response.status
     assert_nil session['user']
 
-    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_password: 'temppass'
 
     assert_equal 422, last_response.status
     assert_includes last_response.body, 'User temp_user already exists.'
 
-    delete_user('temp_user')
+    User.delete!('temp_user')
   end
 
   def test_delete_user
-    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_new_password: 'temppass'
+    post '/users', new_username: 'temp_user', new_password: 'temppass', confirm_password: 'temppass'
 
     assert_equal 302, last_response.status
     assert_equal 'temp_user', session['user']
@@ -498,7 +498,8 @@ class CMSTest < Minitest::Test
   end
 
   def test_user_upload_image
-    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+    image = Rack::Test::UploadedFile.new(Resource.build_path('test_image.jpg'))
+    post '/images', { image_upload: image }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'test_image.jpg was uploaded.', session['message']
@@ -510,14 +511,16 @@ class CMSTest < Minitest::Test
   end
 
   def test_guest_upload_image
-    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }
+    image = Rack::Test::UploadedFile.new(Resource.build_path('test_image.jpg'))
+    post '/images', { image_upload: image }
 
     assert_equal 302, last_response.status
     assert_equal 'You must be signed in to do that.', session['message']
   end
 
   def test_user_delete_image
-    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+    image = Rack::Test::UploadedFile.new(Resource.build_path('test_image.jpg'))
+    post '/images', { image_upload: image }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'test_image.jpg was uploaded.', session['message']
@@ -529,7 +532,7 @@ class CMSTest < Minitest::Test
 
     post '/images/test_image.jpg/delete', {}, admin_session
     assert_equal 302, last_response.status
-    assert_equal 'test_image.jpg was deleted.', session['message']
+    assert_equal 'test_image.jpg has been deleted.', session['message']
 
     get last_response['Location']
 
@@ -538,7 +541,8 @@ class CMSTest < Minitest::Test
   end
 
   def test_guest_delete_image
-    post '/images', { image_upload: Rack::Test::UploadedFile.new(build_path('test_image.jpg')) }, admin_session
+    image = Rack::Test::UploadedFile.new(Resource.build_path('test_image.jpg'))
+    post '/images', { image_upload: image }, admin_session
 
     assert_equal 302, last_response.status
     assert_equal 'test_image.jpg was uploaded.', session['message']
