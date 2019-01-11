@@ -8,9 +8,11 @@ class Image < Resource
     build_path File.join('public', 'images')
   end
 
+  # rubocop:disable Style/RedundantSelf
   def self.all
-    super.map { |image_name| new image_name }
+    super.map { |image_name| self.new image_name }
   end
+  # rubocop:enable Style/RedundantSelf
 
   def self.error(image_name, image_file)
     if image_file.nil?
@@ -32,9 +34,11 @@ class Image < Resource
     end
   end
 
+  # rubocop:disable Style/RedundantSelf
   def self.upload(temp_image)
-    new temp_image[:filename], temp_image[:tempfile]
+    self.new temp_image[:filename], temp_image[:tempfile]
   end
+  # rubocop:enable Style/RedundantSelf
 
   def self.delete!(image_path)
     FileUtils.rm image_path

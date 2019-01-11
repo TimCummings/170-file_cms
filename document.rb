@@ -13,9 +13,11 @@ class Document < Resource
     build_path 'data'
   end
 
+  # rubocop:disable Style/RedundantSelf
   def self.all
-    super.map { |basename| new basename }
+    super.map { |basename| self.new basename }
   end
+  # rubocop:enable Style/RedundantSelf
 
   def self.versions(document_path)
     pattern = File.join(document_path, '*')
