@@ -42,7 +42,7 @@ class User < Resource
       'New password must be confirmed.'
     elsif new_password != confirm_new_password
       "Passwords don't match."
-    elsif all.key?(new_username)
+    elsif all.key? new_username
       "User #{new_username} already exists."
     end
   end
